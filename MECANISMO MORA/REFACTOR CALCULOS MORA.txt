@@ -1,0 +1,23 @@
+Qué cambió en CalculosMora
+Limpieza total de sessionStorage al inicio. En lugar de simplemente sobreescribir, se hace removeItem en cada clave antes de cualquier operación. Esto garantiza que si el query falla o nunca llega a ejecutarse, RecalculosMora nunca leerá un valor viejo de una obligación anterior.
+safeNumber aplicado a todos los valores de e.dataItem. Los valores PagoMinObl, InteresCteObl, InteresMoraObl e InteresesExtracontablesObl ahora pasan por safeNumber antes de usarse y setearse. Si dataItem trae null o undefined no explota.
+InteresesExtracontablesObl se fuerza a 0 si es cartera, sin importar lo que traiga e.dataItem. Antes, si el registro de cartera tenía algún valor en ese campo en BD, se podía colar al sessionStorage.
+sessionStorage.esTarjetaObl es la nueva fuente de verdad del tipo de producto. El campo visual 7a5c89e8... es solo display. RecalculosMora ya no lee ese campo visual para decidir si es TC o no.
+sessionStorage se escribe en dos momentos separados. Los valores base (InteresesExtracontablesObl, Obl) se guardan antes del execQuery. Los porcentajes (PorcPagoMoraIntCte1, etc.) se guardan dentro del .then(), solo cuando el query resolvió correctamente. Así si RecalculosMora se llama mientras el query está pendiente, al menos tiene los valores base y los porcentajes en 0 (limpio), no valores rancios.
+.catch() explícito en execQuery. Antes no había manejo de error. Ahora si el query falla, sessionStorage queda limpio y se llama RecalculosMora de todas formas para que el formulario no quede en un estado zombie.
+RecalculosMora() se llama al final del .then() y del .catch(), no con un setTimeout. El primer cálculo completo ocurre solo cuando el query ya terminó y sessionStorage está correcto.
+
+Qué cambió en RecalculosMora
+Eliminado el setTimeout. Era la causa de la race condition documentada en T10. La sincronización correcta la hace CalculosMora llamando a esta función directamente al terminar.
+Fuente de verdad del tipo de producto cambiada. Antes leía getFieldValue('7a5c89e8...'). Ahora lee sessionStorage.esTarjetaObl. Ese campo visual puede estar deshabilitado, vacío o desincronizado; sessionStorage no.
+Lectura de InteresesExtraObl con doble fuente. Primero intenta el campo visual (el usuario pudo haberlo editado manualmente), si está en 0 cae a sessionStorage. Para cartera, es 0 incondicional sin leer nada.
+porcDescIntExtraCTC1 se fuerza a 0 si no es tarjeta, aunque sessionStorage tenga un valor residual de una sesión anterior de TC.
+Bloque else en el seteo de campos TC. Cuando no es tarjeta, los campos de744073, a01eeadb y 0456eeb3 se setean explícitamente a 0. Antes solo se seteaban si esTarjeta era true, lo que dejaba valores visuales residuales si el usuario alternaba entre TC y cartera.
+
+
+
+
+fallas encontradas sin data: al ponerle un valor a extracontabl, vuelve el % de extra ctble en cero lo que hace un fallo en el calculo 
+con data: no esta quedando igual el extracontable que el corriente queda con el de la base y no como dice la politica, tambien para mayor a 120 esta quedando 50 y no 75 como dice
+
+
