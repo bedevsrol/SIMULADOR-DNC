@@ -143,3 +143,194 @@ Requiere honorarios ver como implementar jueves 4 junio
 GXC : gastos por COBRANZA [(pagominimo - pago al snr) * tasa de mora]
 
 
+
+
+
+================================================================================
+SIMULADOR - NOVACIÓN TARJETA DE CRÉDITO
+================================================================================
+
+================================================================================
+CAMPOS QUE ESTÁN EN POWER APPS Y FALTAN EN EL SIMULADOR
+================================================================================
+
+#   CAMPO                  TIPO                FÓRMULA DISPONIBLE
+--  ---------------------  ------------------  ---------------------------
+1   Requiere Honorarios    Dropdown            PENDIENTE - por definir
+2   Tasa GxC               Numérico            SÍ - (PagoMin - PagoSnr) * TasaMora
+3   Interés Corriente      Numérico (base)     Viene de la base
+4   Interés Extra          Numérico (base)     Viene de la base
+5   Otros Cargos           Numérico (base)     Viene de la base
+6   Interés Mora           Numérico (base)     Viene de la base
+7   Gastos GxC             Calculado           SÍ - LookUp rangos_gastos_cobranzas
+8   1er Facturación        Calculado           SÍ - misma lógica Facturación 2 a 6
+9   Facturación 2 a 6      Calculado           SÍ - novacion_inputtext_cuota_2
+10  Cuota Estimada         Calculado           SÍ - fórmula completa
+
+================================================================================
+
+================================================================================
+SECCIÓN 1: CAMPOS CON FÓRMULA DEFINIDA
+================================================================================
+
+--------------------------------------------------------------------------------
+1. ABONO MÍNIMO REQUERIDO
+--------------------------------------------------------------------------------
+Formato: [$-en-US]#,###
+
+With(
+    {
+        var_BaseAbono: Coalesce(Value(novacion_dropdown_edad_mora_tc.Selected.PORCENTAJE_ABONO_MINIMO); 0) * Coalesce(Value(novacion_inputtext_pagominimo.Text); 0);
+        var_TasaGxC: Coalesce(Value(novacion_inputtext_tasa_GxC.Text); 0) / 100;
+        var_TopeMinimo: Coalesce(novacion_dropdown_edad_mora_tc.Selected.TOPE_MINIMO; 0);
+        var_TopeMaximo: Coalesce(novacion_dropdown_edad_mora_tc.Selected.TOPE_MAXIMO; 0)
+    };
+    Text(
+        var_BaseAbono;
+        "[$-en-US]#,###"
+    )
+)
+
+--------------------------------------------------------------------------------
+2. TASA GxC (Gastos por Cobranza)
+--------------------------------------------------------------------------------
+Fórmula:
+    (Pago Mínimo - Pago al Señor) * Tasa de Mora
+
+If(
+    novacion_dropdown_requiere_honorarios.Selected.Value
+        = "NO, COBRANZAS - Call int.ext tabla GXC";
+    LookUp(
+        rangos_gastos_cobranzas;
+        EDAD_MORA = novacion_dropdown_edad_mora_tc.Selected.EDAD_MORA;
+        TASA_GASTO_COBRANZAS*100
+    );
+    0
+)
+
+--------------------------------------------------------------------------------
+4. 1ER FACTURACIÓN Y FACTURACIÓN 2 A 6
+--------------------------------------------------------------------------------
+Nota: La 1era Facturación usa la misma lógica que Facturación 2 a 6.
+Control: novacion_inputtext_cuota_2
+
+With(
+    {
+        var_BaseAbono: Coalesce((novacion_inputtext_saldototal.Text - novacion_inputtext_abonominimo.Text), 0),
+        var_TasaVigente: Coalesce(Value(novacion_dropdown_tasa.Text), 0) / 100,
+        var_PlazoNov: Coalesce(Value(novacion_dropdown_plazo.Selected.'Plazo Novación'), 0),
+        var_GastoCobranza: Coalesce(novacion_inputtext_gastos_cobranza.Text, 0),
+        var_Total_iCS: Coalesce((novacion_inputtext_interesCte.Text
+            + novacion_inputtext_interesExtra.Text
+            + novacion_inputtext_interesMora.Text
+            + novacion_inputtext_otrosCargos.Text)/6, 0)
+    },
+    Text(
+        (var_BaseAbono / var_PlazoNov)
+        + ((var_BaseAbono * var_TasaVigente)
+        + var_Total_iCS),
+        "[$-en-US]#,###"
+    )
+)
+
+--------------------------------------------------------------------------------
+5. CUOTA ESTIMADA
+--------------------------------------------------------------------------------
+With(
+    {
+        var_BaseAbono: Coalesce((novacion_inputtext_saldototal.Text - novacion_inputtext_abonominimo.Text); 0);
+        var_TasaVigente: Coalesce(Value(novacion_dropdown_tasa.Text); 0) / 100;
+        var_PlazoNov: Coalesce(Value(novacion_dropdown_plazo.Selected.'Plazo Novación'); 0);
+        var_GastoCobranza: Coalesce(novacion_inputtext_gastos_cobranza.Text; 0)
+    };
+    Text(
+        (var_BaseAbono / var_PlazoNov)
+        + ((var_BaseAbono - ((var_BaseAbono / var_PlazoNov) * 6)) * var_TasaVigente);
+        "[$-en-US]#,###"
+    )
+)
+
+--------------------------------------------------------------------------------
+6. SALDO FINAL A DIFERIR
+--------------------------------------------------------------------------------
+With(
+    {
+        var_BaseAbono: Coalesce((novacion_inputtext_saldototal.Text - novacion_inputtext_abonominimo.Text); 0);
+        var_TasaVigente: Coalesce(Value(novacion_dropdown_tasa.Text); 0) / 100;
+        var_GastoCobranza: Coalesce(novacion_inputtext_gastos_cobranza.Text; 0);
+        var_Total_iCS: Coalesce((novacion_inputtext_interesCte.Text
+            + novacion_inputtext_interesExtra.Text
+            + novacion_inputtext_interesMora.Text
+            + novacion_inputtext_otrosCargos.Text)/6; 0)
+    };
+    Text(
+        var_BaseAbono;
+        "[$-en-US]#,###"
+    )
+)
+
+--------------------------------------------------------------------------------
+7. PAGO PARA LA NEGOCIACIÓN
+--------------------------------------------------------------------------------
+With(
+    {
+        var_BaseAbono: Coalesce((novacion_inputtext_saldototal.Text - novacion_inputtext_abonominimo.Text); 0);
+        var_AbonoMin: Coalesce((novacion_inputtext_abonominimo.Text); 0);
+        var_TasaVigente: Coalesce(Value(novacion_dropdown_tasa.Text); 0) / 100;
+        var_GastoCobranza: Coalesce(novacion_inputtext_gastos_cobranza.Text; 0);
+        var_TasaGxC: Coalesce(Value(novacion_inputtext_tasa_GxC.Text); 0) / 100;
+        var_TopeMinimo: Coalesce(novacion_dropdown_edad_mora_tc.Selected.TOPE_MINIMO; 0);
+        var_TopeMaximo: Coalesce(novacion_dropdown_edad_mora_tc.Selected.TOPE_MAXIMO; 0);
+        var_Total_iCS: Coalesce((novacion_inputtext_interesCte.Text
+            + novacion_inputtext_interesExtra.Text
+            + novacion_inputtext_interesMora.Text
+            + novacion_inputtext_otrosCargos.Text)/6; 0)
+    };
+    Text(
+        var_AbonoMin +
+        If(
+            var_TasaGxC <= 0;
+            0;
+            Min(
+                Max(
+                    var_AbonoMin * var_TasaGxC;
+                    var_TopeMinimo
+                );
+                var_TopeMaximo
+            )
+        );
+        "[$-en-US]#,###"
+    )
+)
+
+
+================================================================================
+SECCIÓN 2: CAMPOS QUE VIENEN DE LA BASE (solo lectura / display)
+================================================================================
+
+- Edad Mora de la TC         → viene de la base
+- Interés Corriente          → viene de la base
+- Interés Extra              → viene de la base
+- Interés Mora               → viene de la base
+- Otros Cargos               → viene de la base
+
+
+================================================================================
+SECCIÓN 3: CAMPOS PENDIENTES DE IMPLEMENTAR
+================================================================================
+
+--------------------------------------------------------------------------------
+1. REQUIERE HONORARIOS
+--------------------------------------------------------------------------------
+Estado: PENDIENTE
+Descripción: Campo dropdown. Lógica de implementación por definir.
+Opciones conocidas:
+    - "NO, COBRANZAS - Call int.ext tabla GXC"
+    - (otras opciones por confirmar)
+
+Nota: Este campo ya se usa como input en la fórmula de Gastos x Cobranza,
+pero su lógica de presentación/habilitación en el simulador aún no está definida.
+
+================================================================================
+FIN DEL DOCUMENTO
+================================================================================
