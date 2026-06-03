@@ -1,151 +1,3 @@
-
-ABONO MINIMO REQUERIDO 
-/*"[$-en-US]#,###"*/
-With(
-    {
-        var_BaseAbono: Coalesce(Value(novacion_dropdown_edad_mora_tc.Selected.PORCENTAJE_ABONO_MINIMO); 0) * Coalesce(Value(novacion_inputtext_pagominimo.Text); 0);
-        var_TasaGxC: Coalesce(Value(novacion_inputtext_tasa_GxC.Text); 0) / 100;
-        var_TopeMinimo: Coalesce(novacion_dropdown_edad_mora_tc.Selected.TOPE_MINIMO; 0);
-        var_TopeMaximo: Coalesce(novacion_dropdown_edad_mora_tc.Selected.TOPE_MAXIMO; 0)
-    };
-    Text(
-        var_BaseAbono /* +
-        If(
-            var_TasaGxC <= 0;
-            0;
-            Min(
-                Max(
-                    var_BaseAbono * var_TasaGxC ;
-                    var_TopeMinimo
-                );
-                var_TopeMaximo
-            )
-        ) */; 
-        "[$-en-US]#,###"
-    )
-)
-
-GASTOS X COBRANZA
-
-If(
-    novacion_dropdown_requiere_honorarios.Selected.Value 
-        = "NO, COBRANZAS - Call int.ext tabla GXC";
-    LookUp(
-        rangos_gastos_cobranzas; 
-        EDAD_MORA = novacion_dropdown_edad_mora_tc.Selected.EDAD_MORA; 
-        TASA_GASTO_COBRANZAS*100
-    );
-    0
-)
-
-
-CUOTA ESTIMADA 
-With(
-    {
-        var_BaseAbono: Coalesce((novacion_inputtext_saldototal.Text - novacion_inputtext_abonominimo.Text); 0);
-        var_TasaVigente: Coalesce(Value(novacion_dropdown_tasa.Text); 0) / 100;
-        var_PlazoNov:Coalesce(Value( novacion_dropdown_plazo.Selected.'Plazo Novación');0);
-        var_GastoCobranza:Coalesce(novacion_inputtext_gastos_cobranza.Text;0)
-    };
-    Text(
-        (var_BaseAbono / var_PlazoNov) 
-        + ((var_BaseAbono - ((var_BaseAbono / var_PlazoNov) * 6)) * var_TasaVigente); 
-        "[$-en-US]#,###"
-    )
-)
-
-SALDO FINAL A DIFERIR
-With(
-    {
-        var_BaseAbono: Coalesce((novacion_inputtext_saldototal.Text - novacion_inputtext_abonominimo.Text); 0);
-        var_TasaVigente: Coalesce(Value(novacion_dropdown_tasa.Text); 0) / 100;
-        var_GastoCobranza:Coalesce(novacion_inputtext_gastos_cobranza.Text;0);
-        var_Total_iCS: Coalesce((novacion_inputtext_interesCte.Text
-            + novacion_inputtext_interesExtra.Text 
-            + novacion_inputtext_interesMora.Text
-            + novacion_inputtext_otrosCargos.Text)/6;0)
-    };
-    Text(
-        var_BaseAbono; 
-        "[$-en-US]#,###"
-    )
-)
-
-PAGO PARA LA NEGOCIACION 
-With(
-    {
-        var_BaseAbono: Coalesce((novacion_inputtext_saldototal.Text - novacion_inputtext_abonominimo.Text); 0);
-        var_AbonoMin: Coalesce(( novacion_inputtext_abonominimo.Text); 0);
-        var_TasaVigente: Coalesce(Value(novacion_dropdown_tasa.Text); 0) / 100;
-        var_GastoCobranza:Coalesce(novacion_inputtext_gastos_cobranza.Text;0);
-        var_TasaGxC: Coalesce(Value(novacion_inputtext_tasa_GxC.Text); 0) / 100;
-        var_TopeMinimo: Coalesce(novacion_dropdown_edad_mora_tc.Selected.TOPE_MINIMO; 0);
-        var_TopeMaximo: Coalesce(novacion_dropdown_edad_mora_tc.Selected.TOPE_MAXIMO; 0);
-        var_Total_iCS: Coalesce((novacion_inputtext_interesCte.Text
-            + novacion_inputtext_interesExtra.Text 
-            + novacion_inputtext_interesMora.Text
-            + novacion_inputtext_otrosCargos.Text)/6;0)
-    };
-    Text(
-        var_AbonoMin + 
-        If(
-            var_TasaGxC <= 0;
-            0;
-            Min(
-                Max(
-                    var_AbonoMin * var_TasaGxC ;
-                    var_TopeMinimo
-                );
-                var_TopeMaximo
-            )
-        ) ; 
-        "[$-en-US]#,###"
-    )
-)
-
-################################################################################################
-CREACION DE CAMPOS
-Requiere honorarios ver como implementar jueves 4 junio
-
-[intereses corrientes - intereses extracontables - otro cargos - intereses de mora ] De la base
-
-1er facturacion y 2 a 6 meses
-- novacion_inputtext_cuota_2:
-    Control: Classic/TextInput@2.3.2
-    Properties:
-      BorderColor: =RGBA(227, 227, 227, 1)
-      BorderThickness: =1
-      Clear: =true
-      Default: |-
-        =With(
-            {
-                var_BaseAbono: Coalesce((novacion_inputtext_saldototal.Text - novacion_inputtext_abonominimo.Text), 0),
-                var_TasaVigente: Coalesce(Value(novacion_dropdown_tasa.Text), 0) / 100,
-                var_PlazoNov:Coalesce(Value( novacion_dropdown_plazo.Selected.'Plazo Novación'),0),
-                var_GastoCobranza:Coalesce(novacion_inputtext_gastos_cobranza.Text,0),
-                var_Total_iCS: Coalesce((novacion_inputtext_interesCte.Text
-                    + novacion_inputtext_interesExtra.Text 
-                    + novacion_inputtext_interesMora.Text
-                    + novacion_inputtext_otrosCargos.Text)/6,0)
-            },
-            Text(
-                (var_BaseAbono / var_PlazoNov) 
-                + ((var_BaseAbono * var_TasaVigente)
-                + var_Total_iCS
-                ), 
-                "[$-en-US]#,###"
-            )
-        )
-"PRIMERA FACTURACIÓN (Periodo de gracia capital e intereses) + gastos de cobranza"
-
-
-
-GXC : gastos por COBRANZA [(pagominimo - pago al snr) * tasa de mora]
-
-
-
-
-
 ================================================================================
 SIMULADOR - NOVACIÓN TARJETA DE CRÉDITO
 ================================================================================
@@ -334,3 +186,152 @@ pero su lógica de presentación/habilitación en el simulador aún no está def
 ================================================================================
 FIN DEL DOCUMENTO
 ================================================================================
+
+
+
+ABONO MINIMO REQUERIDO 
+/*"[$-en-US]#,###"*/
+With(
+    {
+        var_BaseAbono: Coalesce(Value(novacion_dropdown_edad_mora_tc.Selected.PORCENTAJE_ABONO_MINIMO); 0) * Coalesce(Value(novacion_inputtext_pagominimo.Text); 0);
+        var_TasaGxC: Coalesce(Value(novacion_inputtext_tasa_GxC.Text); 0) / 100;
+        var_TopeMinimo: Coalesce(novacion_dropdown_edad_mora_tc.Selected.TOPE_MINIMO; 0);
+        var_TopeMaximo: Coalesce(novacion_dropdown_edad_mora_tc.Selected.TOPE_MAXIMO; 0)
+    };
+    Text(
+        var_BaseAbono /* +
+        If(
+            var_TasaGxC <= 0;
+            0;
+            Min(
+                Max(
+                    var_BaseAbono * var_TasaGxC ;
+                    var_TopeMinimo
+                );
+                var_TopeMaximo
+            )
+        ) */; 
+        "[$-en-US]#,###"
+    )
+)
+
+GASTOS X COBRANZA
+
+If(
+    novacion_dropdown_requiere_honorarios.Selected.Value 
+        = "NO, COBRANZAS - Call int.ext tabla GXC";
+    LookUp(
+        rangos_gastos_cobranzas; 
+        EDAD_MORA = novacion_dropdown_edad_mora_tc.Selected.EDAD_MORA; 
+        TASA_GASTO_COBRANZAS*100
+    );
+    0
+)
+
+
+CUOTA ESTIMADA 
+With(
+    {
+        var_BaseAbono: Coalesce((novacion_inputtext_saldototal.Text - novacion_inputtext_abonominimo.Text); 0);
+        var_TasaVigente: Coalesce(Value(novacion_dropdown_tasa.Text); 0) / 100;
+        var_PlazoNov:Coalesce(Value( novacion_dropdown_plazo.Selected.'Plazo Novación');0);
+        var_GastoCobranza:Coalesce(novacion_inputtext_gastos_cobranza.Text;0)
+    };
+    Text(
+        (var_BaseAbono / var_PlazoNov) 
+        + ((var_BaseAbono - ((var_BaseAbono / var_PlazoNov) * 6)) * var_TasaVigente); 
+        "[$-en-US]#,###"
+    )
+)
+
+SALDO FINAL A DIFERIR
+With(
+    {
+        var_BaseAbono: Coalesce((novacion_inputtext_saldototal.Text - novacion_inputtext_abonominimo.Text); 0);
+        var_TasaVigente: Coalesce(Value(novacion_dropdown_tasa.Text); 0) / 100;
+        var_GastoCobranza:Coalesce(novacion_inputtext_gastos_cobranza.Text;0);
+        var_Total_iCS: Coalesce((novacion_inputtext_interesCte.Text
+            + novacion_inputtext_interesExtra.Text 
+            + novacion_inputtext_interesMora.Text
+            + novacion_inputtext_otrosCargos.Text)/6;0)
+    };
+    Text(
+        var_BaseAbono; 
+        "[$-en-US]#,###"
+    )
+)
+
+PAGO PARA LA NEGOCIACION 
+With(
+    {
+        var_BaseAbono: Coalesce((novacion_inputtext_saldototal.Text - novacion_inputtext_abonominimo.Text); 0);
+        var_AbonoMin: Coalesce(( novacion_inputtext_abonominimo.Text); 0);
+        var_TasaVigente: Coalesce(Value(novacion_dropdown_tasa.Text); 0) / 100;
+        var_GastoCobranza:Coalesce(novacion_inputtext_gastos_cobranza.Text;0);
+        var_TasaGxC: Coalesce(Value(novacion_inputtext_tasa_GxC.Text); 0) / 100;
+        var_TopeMinimo: Coalesce(novacion_dropdown_edad_mora_tc.Selected.TOPE_MINIMO; 0);
+        var_TopeMaximo: Coalesce(novacion_dropdown_edad_mora_tc.Selected.TOPE_MAXIMO; 0);
+        var_Total_iCS: Coalesce((novacion_inputtext_interesCte.Text
+            + novacion_inputtext_interesExtra.Text 
+            + novacion_inputtext_interesMora.Text
+            + novacion_inputtext_otrosCargos.Text)/6;0)
+    };
+    Text(
+        var_AbonoMin + 
+        If(
+            var_TasaGxC <= 0;
+            0;
+            Min(
+                Max(
+                    var_AbonoMin * var_TasaGxC ;
+                    var_TopeMinimo
+                );
+                var_TopeMaximo
+            )
+        ) ; 
+        "[$-en-US]#,###"
+    )
+)
+
+################################################################################################
+CREACION DE CAMPOS
+Requiere honorarios ver como implementar jueves 4 junio
+
+[intereses corrientes - intereses extracontables - otro cargos - intereses de mora ] De la base
+
+1er facturacion y 2 a 6 meses
+- novacion_inputtext_cuota_2:
+    Control: Classic/TextInput@2.3.2
+    Properties:
+      BorderColor: =RGBA(227, 227, 227, 1)
+      BorderThickness: =1
+      Clear: =true
+      Default: |-
+        =With(
+            {
+                var_BaseAbono: Coalesce((novacion_inputtext_saldototal.Text - novacion_inputtext_abonominimo.Text), 0),
+                var_TasaVigente: Coalesce(Value(novacion_dropdown_tasa.Text), 0) / 100,
+                var_PlazoNov:Coalesce(Value( novacion_dropdown_plazo.Selected.'Plazo Novación'),0),
+                var_GastoCobranza:Coalesce(novacion_inputtext_gastos_cobranza.Text,0),
+                var_Total_iCS: Coalesce((novacion_inputtext_interesCte.Text
+                    + novacion_inputtext_interesExtra.Text 
+                    + novacion_inputtext_interesMora.Text
+                    + novacion_inputtext_otrosCargos.Text)/6,0)
+            },
+            Text(
+                (var_BaseAbono / var_PlazoNov) 
+                + ((var_BaseAbono * var_TasaVigente)
+                + var_Total_iCS
+                ), 
+                "[$-en-US]#,###"
+            )
+        )
+"PRIMERA FACTURACIÓN (Periodo de gracia capital e intereses) + gastos de cobranza"
+
+
+
+GXC : gastos por COBRANZA [(pagominimo - pago al snr) * tasa de mora]
+
+
+
+
