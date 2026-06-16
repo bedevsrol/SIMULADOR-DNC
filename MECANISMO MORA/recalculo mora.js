@@ -1,5 +1,4 @@
 function RecalculosMora() {
-    // Si todavía no está listo el cálculo inicial, reintentar
     if (sessionStorage.calculosMoraListo !== 'si') {
         const intentos = parseInt(sessionStorage.reintentosRecalculo || '0')
         if (intentos < 10) {

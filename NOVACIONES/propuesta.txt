@@ -11,6 +11,9 @@
   interes extracontable      -> vienen de "poblamiento de datos"
   interes de mora            -> vienen de "poblamiento de datos"
   otros cargos               -> vienen de "poblamiento de datos"
+  EDAD MORA NOVACION         -> Llenar manualmente
+
+
   tasa gxc %                 -> lo define la edad de mora y es valida en la tabla
                                 "SimiladorDNC_Lappiz_rangosGastosCobranza".
                                 Dependiendo de como llegue de la tabla se
