@@ -19,6 +19,7 @@ function CalculosNovacion() {
 
     // --- Nombres de columna en e.dataItem (poblamiento de datos) ----------
     const DI = {
+<<<<<<< HEAD
         diasMora:         'NOMBRE_CAMPO',               // días de mora (número, llave para rango MinDias/MaxDias)
         saldoTotal:       e.dataItem['NOMBRE_CAMPO'],   // saldo total            (CONFIRMAR si viene de dataItem)
         pagoMinimo:       e.dataItem['NOMBRE_CAMPO'],   // p. ej. 'PagoMinObl'
@@ -26,6 +27,15 @@ function CalculosNovacion() {
         interesExtra:     e.dataItem['NOMBRE_CAMPO'],   // p. ej. 'InteresesExtracontablesObl'
         interesMora:      e.dataItem['NOMBRE_CAMPO'],   // p. ej. 'InteresMoraObl'
         otrosCargos:      e.dataItem['NOMBRE_CAMPO'],   // columna de otros cargos
+=======
+        saldoTotal:       '',   // saldo total            (CONFIRMAR si viene de dataItem)
+        pagoMinimo:       '',   // p. ej. 'PagoMinObl'
+        interesCorriente: '',   // p. ej. 'InteresCteObl'
+        interesExtra:     '',   // p. ej. 'InteresesExtracontablesObl'
+        interesMora:      '',   // p. ej. 'InteresMoraObl'
+        otrosCargos:      '',   // columna de otros cargos
+        edadMoraFallback: '',   // p. ej. 'EdadMoraCl' (si no hay dropdown)
+>>>>>>> 0c35ddd7679baae9f135a603d4eaefa513db8f4a
     }
 
     // --- GUID de campos del formulario ------------------------------------
@@ -47,11 +57,21 @@ function CalculosNovacion() {
         pagoHonorarios:     '',  // rama honorarios (PENDIENTE)
     }
 
+<<<<<<< HEAD
     // --- Tabla de rangos (columnas YA conocidas de la imagen) -------------
     const TABLA = 'SimiladorDNC_Lappiz_rangosGastosCobranza'
     const COL = {
         minDias:   'MinDias',
         maxDias:   'MaxDias',
+=======
+    // --- GUID del dropdown de edad de mora --------------------------------
+    const GUID_DROPDOWN_EDAD = ''   // se usa con getElementById (sin escapar)
+
+    // --- Tabla de rangos (columnas YA conocidas de la imagen) -------------
+    const TABLA = 'SimiladorDNC_Lappiz_rangosGastosCobranza'
+    const COL = {
+        edad:      'EdadMoragxc',
+>>>>>>> 0c35ddd7679baae9f135a603d4eaefa513db8f4a
         tasaGxC:   'PorcTasaGastoCobranza',  // viene como FRACCIÓN (0.0714)
         topeMin:   'Tope_Minimo',
         topeMax:   'Tope_Maximo',
@@ -73,7 +93,10 @@ function CalculosNovacion() {
        ===================================================================== */
 
     // --- del poblamiento (e.dataItem) ---
+<<<<<<< HEAD
     const diasMora    = safeNumber(e.dataItem[DI.diasMora])
+=======
+>>>>>>> 0c35ddd7679baae9f135a603d4eaefa513db8f4a
     const saldoTotal  = safeNumber(e.dataItem[DI.saldoTotal])
     const pagoMinimo  = safeNumber(e.dataItem[DI.pagoMinimo])
     const intCte      = safeNumber(e.dataItem[DI.interesCorriente])
@@ -86,12 +109,26 @@ function CalculosNovacion() {
     const plazoNov    = safeNumber(getFieldValue(F.plazoNovacion))
     const requiereHon = (getFieldValue(F.requiereHonorarios) || '').trim()
 
+<<<<<<< HEAD
+=======
+    // --- edad de mora: dropdown seleccionado, con fallback al dataItem ---
+    // getElementById evita el lío de escapar IDs que empiezan por dígito
+    const ddEdad = document.getElementById(GUID_DROPDOWN_EDAD)
+    const edadMora = (ddEdad && ddEdad.selectedOptions && ddEdad.selectedOptions[0])
+        ? ddEdad.selectedOptions[0].textContent.trim()
+        : e.dataItem[DI.edadMoraFallback]
+
+>>>>>>> 0c35ddd7679baae9f135a603d4eaefa513db8f4a
     /* =====================================================================
        2) LOOKUP A LA TABLA  (todo lo de abajo depende de la tabla)
        ===================================================================== */
     execQuery(
         `SELECT ${COL.tasaGxC}, ${COL.topeMin}, ${COL.topeMax}, ${COL.porcAbono} ` +
+<<<<<<< HEAD
         `FROM ${TABLA} WHERE ${diasMora} >= ${COL.minDias} AND ${diasMora} <= ${COL.maxDias}`
+=======
+        `FROM ${TABLA} WHERE ${COL.edad} = '${edadMora}'`
+>>>>>>> 0c35ddd7679baae9f135a603d4eaefa513db8f4a
     ).then((response) => {
 
         const fila = response[0][0]
