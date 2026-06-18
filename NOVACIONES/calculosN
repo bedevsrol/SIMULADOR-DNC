@@ -1,0 +1,283 @@
+/* ============================================================================
+   NOVACIÓN — ARCHIVO ÚNICO DEFINITIVO (ES5, compatible validador Lappiz)
+   ============================================================================
+   Sin ?., sin async/await, sin template literals, sin arrow, sin const/let.
+
+   DÓNDE VA CADA BLOQUE:
+     BLOQUE 1  cargarDatosNovacion + consultarRango  -> evento de CARGA
+     BLOQUE 2  calculoNovacion                        -> bloque de script
+     BLOQUE 3  toggleHonorarios                        -> bloque de script
+     BLOQUE 4  onPagoNegociacionChange  -> valuechanged Pago negociación (92bcba6d)
+     BLOQUE 5  onDiasMoraChange         -> valuechanged Día de mora (0cb35f96)
+     BLOQUE 6  switch #check            -> junto al HTML del switch
+
+   VALUECHANGED de ENTRADAS -> calculoNovacion():
+     Pago mínimo 1f7c2b79 / % tasa b76668b5 / Plazo 9382c5a1 /
+     Saldo 616e6102 / Int cte e2c2ca76 / Int extra a710006e /
+     Int mora ce31f456 / Otros cargos 51440ec8
+   CAMPOS DE SALIDA -> SIN valuechanged
+     (abono 4cbf2d64, tasaGxC 435298fd, 1er fact eb81310f, 2a6 9f4dc8d9,
+      cuota d157fb29, saldo final c6923383, honorarios 075c9be0, linea 46155d51)
+   ============================================================================ */
+
+
+/* ===================== BLOQUE 1 — CARGA ===================== */
+function cargarDatosNovacion(e) {
+    console.log('LOG 1 - cargarDatosNovacion CORRIÓ');
+    console.log('LOG 2 - e =', e);
+    console.log('LOG 3 - e.dataItem =', (e ? e.dataItem : 'NO HAY e'));
+ 
+    var NOV = {
+        saldoTotal:  '616e6102-56e5-48e9-bfc2-fce8497e629d',
+        pagoMinimo:  '1f7c2b79-87a6-402f-95f2-414aea88a4bf',
+        intCte:      'e2c2ca76-e568-413d-8aac-b7bd2c3b9f52',
+        intExtra:    'a710006e-72a9-4388-84ed-cc3b743ef45f',
+        intMora:     'ce31f456-c5d9-4476-a56f-f5f44d2c8827',
+        otrosCargos: '51440ec8-1f3c-49fa-8672-15870130cb90',
+        diasMora:    '0cb35f96-ddc9-40e7-b948-8f0d4d86bf79'
+    };
+ 
+    try {
+        if (typeof registrarSwitchHonorarios === 'function') {
+            registrarSwitchHonorarios();
+        }
+ 
+        if (e && e.dataItem) {
+            console.log('LOG 4 - SÍ entró a sembrar. IDENTIFICACION =', e.dataItem.IDENTIFICACION);
+            console.log('LOG 5 - SALDO =', e.dataItem.SALDO_TOTAL_OBL, ' INT_CTE =', e.dataItem.INTERES_CTE_OBL);
+ 
+            setFieldValue(NOV.saldoTotal,  e.dataItem.SALDO_TOTAL_OBL);
+            setFieldValue(NOV.pagoMinimo,  e.dataItem.PAGO_MIN_OBL);
+            setFieldValue(NOV.intCte,      e.dataItem.INTERES_CTE_OBL);
+            setFieldValue(NOV.intMora,     e.dataItem.INTERES_MORA_OBL);
+            setFieldValue(NOV.intExtra,    e.dataItem.INTERESES_EXTRACONTABLES_OBL || 0);
+            setFieldValue(NOV.otrosCargos, e.dataItem.OTROS_CARGOS_EXIGIBLES || 0);
+ 
+            sessionStorage.TipoCobro        = e.dataItem.TIPO_COBRO;
+            sessionStorage.Linea            = e.dataItem.LINEA_PROD;
+            sessionStorage.honorariosValues = e.dataItem.HONORARIOS;
+            sessionStorage.TipoCartera      = e.dataItem.TIPO_CARTERA;
+            sessionStorage.TipProducto      = e.dataItem.PRODUCTO;
+        } else {
+            console.log('LOG 4b - NO entró a sembrar (no hay e.dataItem)');
+        }
+ 
+        var identificacion = (e && e.dataItem) ? (e.dataItem.IDENTIFICACION || '') : '';
+        console.log('LOG 6 - identificacion para consulta =', identificacion);
+ 
+        if (identificacion) {
+            var queryDias =
+                "SELECT DIAS_MORA_OBL " +
+                "FROM SimiladorDNC_Lappiz_PoblamientoDatos " +
+                "WHERE IDENTIFICACION = '" + identificacion + "'";
+ 
+            execQuery(queryDias).then(function (resDias) {
+                console.log('LOG 7 - respuesta consulta días =', resDias);
+                var filaDias = (resDias && resDias[0] && resDias[0][0]) ? resDias[0][0] : null;
+                if (filaDias) {
+                    console.log('LOG 8 - DIAS_MORA_OBL =', filaDias.DIAS_MORA_OBL);
+                    setFieldValue(NOV.diasMora, Number(filaDias.DIAS_MORA_OBL));
+                } else {
+                    console.log('LOG 8b - la consulta de días NO devolvió fila');
+                }
+                consultarRango();
+            });
+        } else {
+            console.log('LOG 6b - sin identificación, no consulta días');
+            consultarRango();
+        }
+ 
+    } catch (error) {
+        console.error('ERROR en cargarDatosNovacion:', error);
+    }
+}
+ 
+function consultarRango() {
+    console.log('LOG 9 - consultarRango CORRIÓ');
+    var ID_DIAS = '0cb35f96-ddc9-40e7-b948-8f0d4d86bf79';
+    function num(v) { return isNaN(parseFloat(v)) ? 0 : parseFloat(v); }
+ 
+    var edadMora = num(getFieldValue(ID_DIAS));
+    console.log('LOG 10 - edadMora leída del campo =', edadMora);
+ 
+    if (edadMora > 0) {
+        var queryRango =
+            "SELECT TOP 1 Tope_Minimo, Tope_Maximo, PorcTasaGastoCobranza, PorcAbonoMinimo " +
+            "FROM SimiladorDNC_Lappiz_rangosGastosCobranza " +
+            "WHERE " + edadMora + " BETWEEN MinDias AND MaxDias";
+ 
+        execQuery(queryRango).then(function (resRango) {
+            console.log('LOG 11 - respuesta rango =', resRango);
+            var rango = (resRango && resRango[0] && resRango[0][0]) ? resRango[0][0] : null;
+            var topeMin = 0, topeMax = 0, tasaGxCporc = 0, porcAbono = 0;
+            if (rango) {
+                topeMin = num(rango.Tope_Minimo);
+                topeMax = num(rango.Tope_Maximo);
+                tasaGxCporc = num(rango.PorcTasaGastoCobranza) * 100;
+                porcAbono   = num(rango.PorcAbonoMinimo) * 100;
+                console.log('LOG 12 - tasaGxC% =', tasaGxCporc, ' topeMin =', topeMin, ' topeMax =', topeMax, ' porMora =', porcAbono);
+            } else {
+                console.log('LOG 12b - rango NO devolvió fila');
+            }
+            sessionStorage.NOV_topeMin = topeMin;
+            sessionStorage.NOV_topeMax = topeMax;
+            sessionStorage.NOV_tasaGxC = tasaGxCporc;
+            sessionStorage.porMora     = porcAbono;
+            if (typeof calculoNovacion === 'function') { calculoNovacion(); }
+        });
+    } else {
+        console.log('LOG 10b - edadMora = 0, no consulta rango');
+        sessionStorage.NOV_topeMin = 0;
+        sessionStorage.NOV_topeMax = 0;
+        sessionStorage.NOV_tasaGxC = 0;
+        if (typeof calculoNovacion === 'function') { calculoNovacion(); }
+    }
+}
+
+
+/* ===================== BLOQUE 2 — calculoNovacion ===================== */
+function calculoNovacion() {
+    var NOV = {
+        pagoMinimo: '1f7c2b79-87a6-402f-95f2-414aea88a4bf',
+        tasa: 'b76668b5-0710-4eee-9718-a2633605c35e',
+        plazo: '9382c5a1-0445-4ed9-a785-850d06da2cd2',
+        saldoTotal: '616e6102-56e5-48e9-bfc2-fce8497e629d',
+        intCte: 'e2c2ca76-e568-413d-8aac-b7bd2c3b9f52',
+        intExtra: 'a710006e-72a9-4388-84ed-cc3b743ef45f',
+        intMora: 'ce31f456-c5d9-4476-a56f-f5f44d2c8827',
+        otrosCargos: '51440ec8-1f3c-49fa-8672-15870130cb90',
+        abonoMinimo: '4cbf2d64-0442-4c98-964f-e741a6a4e6a1',
+        tasaGxC: '435298fd-5cda-4327-9e83-079eda46f0a9',
+        gastosCobranza: 'PONER-GUID-GASTOS-GXC',
+        factMes1: 'eb81310f-a2f4-4cac-8dee-cd877f840a0f',
+        factMes2a6: '9f4dc8d9-4df5-46b4-89b5-4e9271b003eb',
+        cuotaEstimada: 'd157fb29-fd6f-450b-b637-8fa18c824cd2',
+        saldoFinalDiferir: 'c6923383-8eec-4efe-81a5-954ce52b8882'
+    };
+    function num(v) { return isNaN(parseFloat(v)) ? 0 : parseFloat(v); }
+    function piso(n) { return Math.floor(n); }
+    function divi(a, b) { return (b === 0) ? 0 : a / b; }
+
+    try {
+        var chk = document.getElementById('check');
+        var tipoCobro = (sessionStorage.TipoCobro || '').toUpperCase();
+        var esHonorarios = (chk ? chk.checked : false) ||
+            (tipoCobro.indexOf('HONORARIO') === 0);
+
+        if (typeof toggleHonorarios === 'function') { toggleHonorarios(esHonorarios); }
+
+        var saldoTotal = num(getFieldValue(NOV.saldoTotal));
+        var pagoMinimo = num(getFieldValue(NOV.pagoMinimo));
+        var tasa = num(getFieldValue(NOV.tasa));
+        var intCte = num(getFieldValue(NOV.intCte));
+        var intExtra = num(getFieldValue(NOV.intExtra));
+        var intMora = num(getFieldValue(NOV.intMora));
+        var otrosCargos = num(getFieldValue(NOV.otrosCargos));
+
+        var plazoNov;
+        var ddPlazo = document.getElementById(NOV.plazo);
+        if (ddPlazo && ddPlazo.selectedOptions && ddPlazo.selectedOptions[0]) {
+            plazoNov = num(ddPlazo.selectedOptions[0].textContent);
+        } else {
+            plazoNov = num(getFieldValue(NOV.plazo));
+        }
+
+        var porMora = num(sessionStorage.porMora);
+        var topeMin = num(sessionStorage.NOV_topeMin);
+        var topeMax = num(sessionStorage.NOV_topeMax);
+
+        // CAMPO 1: Abono minimo
+        var abonoMinimo = piso(pagoMinimo * (porMora / 100));
+
+        var base = saldoTotal - abonoMinimo;
+        var tasaVigente = tasa / 100;
+        var totalICS = (intCte + intExtra + intMora + otrosCargos) / 6;
+
+        // CAMPO 2: Tasa GxC (honorarios -> 0)
+        var tasaGxC = esHonorarios ? 0 : num(sessionStorage.NOV_tasaGxC);
+
+        // CAMPO 4: Gastos por cobranza (clamp)
+        var gastosCobranza;
+        if (tasaGxC <= 0) {
+            gastosCobranza = 0;
+        } else {
+            var valorGxC = (pagoMinimo - abonoMinimo) * (tasaGxC / 100);
+            if (topeMax > 0 && valorGxC > topeMax) { gastosCobranza = topeMax; }
+            else if (valorGxC < topeMin) { gastosCobranza = topeMin; }
+            else { gastosCobranza = valorGxC; }
+        }
+        gastosCobranza = piso(gastosCobranza);
+
+        // CAMPO 3: 1er mes
+        var factMes1 = (base * tasaVigente) + totalICS + gastosCobranza;
+
+        // CAMPO 5: 2 a 6
+        var factMes2a6 = divi(base, plazoNov) + ((base * tasaVigente) + totalICS);
+
+        // CAMPO 6: Cuota
+        var cuotaEstimada = divi(base, plazoNov) +
+            ((base - (divi(base, plazoNov) * 6)) * tasaVigente);
+
+        // CAMPO 7: Saldo final
+        var saldoFinal = base;
+
+        // RAMA HONORARIOS -> PENDIENTE (tasa por producto)
+
+        // Escribir resultados (floor)
+        setFieldValue(NOV.abonoMinimo, abonoMinimo);
+        setFieldValue(NOV.tasaGxC, piso(tasaGxC));
+        // Si tienes el campo de Gastos GXC, descomenta y pon su GUID arriba:
+        // setFieldValue(NOV.gastosCobranza, gastosCobranza);
+        setFieldValue(NOV.factMes1, piso(factMes1));
+        setFieldValue(NOV.factMes2a6, piso(factMes2a6));
+        setFieldValue(NOV.cuotaEstimada, piso(cuotaEstimada));
+        setFieldValue(NOV.saldoFinalDiferir, piso(saldoFinal));
+
+    } catch (error) {
+        console.error('Error en calculoNovacion:', error);
+    }
+}
+
+
+/* ===== BLOQUE 3+6 — Switch de honorarios (toggle + listener juntos) =====
+   toggleHonorarios queda DENTRO. Llama registrarSwitchHonorarios() una vez
+   al cargar (ya se llama desde cargarDatosNovacion). El HTML del switch va
+   en la VISTA (SWITCH_solo_HTML.html).
+======================================================================= */
+function registrarSwitchHonorarios() {
+    // muestra/oculta los 3 campos de honorarios
+    function toggleHonorarios(mostrar) {
+        try {
+            visibilityField('46155d51-2885-490a-8a71-d75a35da95b4', mostrar); // Linea
+            visibilityField('baa0e784-8248-45b8-9394-8932fe45094e', mostrar); // Tipo de Cartera
+            visibilityField('075c9be0-baad-48b2-864d-acae840b7256', mostrar); // Honorarios
+        } catch (error) {
+            console.error('Error al mostrar/ocultar honorarios:', error);
+        }
+    }
+    // exponer toggleHonorarios para que calculoNovacion también la use
+    window.toggleHonorarios = toggleHonorarios;
+
+    // engancha el switch (off().on() evita duplicar el handler)
+    $(document).off('change', '#check').on('change', '#check', function () {
+        toggleHonorarios(this.checked);
+        if (typeof calculoNovacion === 'function') { calculoNovacion(); }
+    });
+}
+
+
+/* ============ BLOQUE 4 — onPagoNegociacionChange (valuechanged) ============ */
+function onPagoNegociacionChange(e) {
+    setFieldValue('1f7c2b79-87a6-402f-95f2-414aea88a4bf', e.value);
+    if (typeof validacion === 'function') { validacion(e.value); }
+    if (typeof calculoNovacion === 'function') { calculoNovacion(); }
+}
+
+
+/* ============ BLOQUE 5 — onDiasMoraChange (valuechanged) ============ */
+function onDiasMoraChange(e) {
+    if (typeof cargarDatosNovacion === 'function') { cargarDatosNovacion(e); }
+}
+
+
+/* ============ FIN ============ */

@@ -332,6 +332,6 @@ Requiere honorarios ver como implementar jueves 4 junio
 
 GXC : gastos por COBRANZA [(pagominimo - pago al snr) * tasa de mora]
 
-
+realizar las actualizaciones correspondientes al visual y documentar, despues 
 
 
