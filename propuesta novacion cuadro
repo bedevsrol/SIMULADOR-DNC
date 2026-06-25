@@ -1,0 +1,236 @@
+/*# GUÍA DE MIGRACIÓN: Switch → Dropdown "¿Honorarios o GxC?"
+
+## ANTES DE EMPEZAR
+Reemplaza `PEGAR_GUID_AQUI` por el GUID real del dropdown en el código nuevo
+(aparece en 2 lugares: esHonorariosNov e initGastoNov).
+
+---
+
+## 1. FUNCIONES A ELIMINAR (borrar por completo)
+
+- [ ] `initSwitchHonorariosNov`  → la reemplaza `initGastoNov`
+- [ ] El listener suelto del switch (si lo tienes, el `$(document).on('change','#check_novacion'...`)
+
+## 2. HTML/CSS A ELIMINAR
+
+- [ ] Todo el bloque del switch: `<div class="honorarios-container">...</div>` y su `<style>`
+      (ya no se usa, ahora es el dropdown nativo de Lappiz)
+
+## 3. FUNCIONES A AGREGAR (pegar junto a las demás)
+
+- [ ] `esHonorariosNov`     (helper que lee el dropdown)
+- [ ] `onGastoNovChange`    (valuechanged del dropdown)
+- [ ] `initGastoNov`        (poblamiento en data cargada)
+
+## 4. CAMBIO DENTRO DE calculoNovacion
+
+Buscar:
+    var chk = document.getElementById('check_novacion');
+    var esHonorarios = chk ? chk.checked : false;
+
+Reemplazar por:
+    var esHonorarios = esHonorariosNov();
+
+## 5. CAMBIO EN valoresPoblamiento
+
+Buscar:
+    if (typeof initSwitchHonorariosNov === 'function') { initSwitchHonorariosNov(); }
+
+Reemplazar por:
+    if (typeof initGastoNov === 'function') { initGastoNov(); }
+
+## 6. EVENTOS A CONFIGURAR EN LAPPIZ (valuechanged)
+
+- [ ] Dropdown "¿Honorarios o GxC?"  → valuechanged → onGastoNovChange
+- [ ] Dropdown Tipo de Cartera N (baa0e784) → valuechanged → calculoHonorariosNov  (ya lo tenías)
+- [ ] Días de mora (0cb35f96) → valuechanged → onDiasMoraChange  (ya lo tenías)
+- [ ] Pago para negociación (92bcba6d) → valuechanged → onPagoNegociacionChange  (ya lo tenías)
+
+---
+
+## NO SE TOCA (queda igual)
+- toggleHonorariosNov  (su lógica no cambia)
+- consultarRango, calculoHonorariosNov, onDiasMoraChange,
+  onPagoNegociacionChange, validacion
+- Toda la lógica de cálculo dentro de calculoNovacion*/
+/* ============================================================================
+   FUNCIONES NUEVAS (pegar junto a las demás).
+   Reemplaza PEGAR_GUID_AQUI por el GUID del dropdown "¿Honorarios o GxC?"
+============================================================================ */
+
+/* Lee el dropdown "¿Honorarios o GxC?". true si es HONORARIOS. */
+function esHonorariosNov() {
+    var GID_GASTO = 'PEGAR_GUID_AQUI';   // <<< GUID del dropdown
+    var texto = '';
+    var widget = document.querySelector('[aria-owns="' + GID_GASTO + '_listbox"]');
+    if (widget) {
+        var kInput = widget.querySelector('.k-input');
+        if (kInput) { texto = kInput.textContent.trim().toUpperCase(); }
+    }
+    return texto.indexOf('HONORARIO') === 0;
+}
+
+/* valuechanged del dropdown "¿Honorarios o GxC?" -> recalcula */
+function onGastoNovChange(e) {
+    if (typeof calculoNovacion === 'function') { calculoNovacion(); }
+}
+
+/* Reemplaza a initSwitchHonorariosNov. Selecciona la opción en data cargada. */
+function initGastoNov() {
+    var GID_GASTO = 'PEGAR_GUID_AQUI';   // <<< MISMO GUID
+    var intentos = 0;
+    function intentar() {
+        var dd = kendo.jQuery('#' + GID_GASTO).data('kendoDropDownList');
+        var tipo = (sessionStorage.TipoCobro || '').toUpperCase();
+        if (!dd || (tipo === '' && intentos < 15)) { intentos++; setTimeout(intentar, 300); return; }
+
+        var objetivo = (tipo.indexOf('HONORARIO') === 0) ? 'HONORARIOS' : 'GASTOS';
+        var textField  = dd.options.dataTextField;
+        var valueField = dd.options.dataValueField;
+        var data = dd.dataSource.data();
+        for (var i = 0; i < data.length; i++) {
+            var t = (data[i][textField] || '').toString().toUpperCase();
+            if (t.indexOf(objetivo) === 0) {
+                dd.value(data[i][valueField]);
+                dd.trigger('change');
+                break;
+            }
+        }
+    }
+    intentar();
+}
+
+
+/* ============================================================================
+   calculoNovacion — YA CON EL CAMBIO APLICADO (usa esHonorariosNov).
+   Lo demás queda idéntico.
+============================================================================ */
+function calculoNovacion() {
+
+    var NOV = {
+        pagoMinimo:           '1f7c2b79-87a6-402f-95f2-414aea88a4bf',
+        tasa:                 'b76668b5-0710-4eee-9718-a2633605c35e',
+        plazo:                '9382c5a1-0445-4ed9-a785-850d06da2cd2',
+        saldoTotal:           '616e6102-56e5-48e9-bfc2-fce8497e629d',
+        intCte:               'e2c2ca76-e568-413d-8aac-b7bd2c3b9f52',
+        intExtra:             'a710006e-72a9-4388-84ed-cc3b743ef45f',
+        intMora:              'ce31f456-c5d9-4476-a56f-f5f44d2c8827',
+        otrosCargos:          '51440ec8-1f3c-49fa-8672-15870130cb90',
+        abonoMinimo:          '4cbf2d64-0442-4c98-964f-e741a6a4e6a1',
+        tasaGxC:              '435298fd-5cda-4327-9e83-079eda46f0a9',
+        gastosCobranza:       '3300e7e1-8d86-47d1-b709-2aa4773ec615',
+        factMes1:             'eb81310f-a2f4-4cac-8dee-cd877f840a0f',
+        factMes2a6:           '9f4dc8d9-4df5-46b4-89b5-4e9271b003eb',
+        cuotaEstimada:        'd157fb29-fd6f-450b-b637-8fa18c824cd2',
+        saldoFinalDiferir:    'c6923383-8eec-4efe-81a5-954ce52b8882',
+        pagoParaNegociacion:  '92bcba6d-4dab-459e-bd8f-164da7eeb526',
+        honorarios:           '075c9be0-baad-48b2-864d-acae840b7256'
+    };
+
+    function num(v)    { return isNaN(parseFloat(v)) ? 0 : parseFloat(v); }
+    function piso(n)   { return Math.floor(n); }
+    function divi(a,b) { return (b === 0) ? 0 : a / b; }
+
+    window.NOV_calculando = true;
+
+    try {
+        // >>> CAMBIO: lee el dropdown en vez del switch <<<
+        var esHonorarios = esHonorariosNov();
+
+        var saldoTotal  = num(getFieldValue(NOV.saldoTotal));
+        var pagoMinimo  = num(getFieldValue(NOV.pagoMinimo));
+        var tasa        = num(getFieldValue(NOV.tasa));
+        var intCte      = num(getFieldValue(NOV.intCte));
+        var intExtra    = num(getFieldValue(NOV.intExtra));
+        var intMora     = num(getFieldValue(NOV.intMora));
+        var otrosCargos = num(getFieldValue(NOV.otrosCargos));
+
+        var plazoNov;
+        var ddPlazo = document.getElementById(NOV.plazo);
+        if (ddPlazo && ddPlazo.selectedOptions && ddPlazo.selectedOptions[0]) {
+            plazoNov = num(ddPlazo.selectedOptions[0].textContent);
+        } else {
+            plazoNov = num(getFieldValue(NOV.plazo));
+        }
+
+        var porMora = num(sessionStorage.porMora);
+        var topeMin = num(sessionStorage.NOV_topeMin);
+        var topeMax = num(sessionStorage.NOV_topeMax);
+
+        var tipoCobro = (sessionStorage.TipoCobro || '').toUpperCase();
+        if (tipoCobro === 'GASTOS_90') { topeMax = 0; }
+
+        var abonoMinimo = pagoMinimo * (porMora / 100);
+        var tasaVigente = tasa / 100;
+        var totalICS    = (intCte + intExtra + intMora + otrosCargos) / 6;
+
+        var base, tasaGxC, gastosCobranza, pagoNegociacion;
+        var factMes1, factMes2a6, cuotaEstimada, saldoFinal, honorarios;
+
+        if (esHonorarios) {
+            // ================= HONORARIOS =================
+            var porcCartera = num(sessionStorage.NOV_porcCartera);
+            honorarios = piso((abonoMinimo * porcCartera) / 100);
+
+            base = saldoTotal - (abonoMinimo + honorarios);
+            tasaGxC = 0;
+            gastosCobranza = 0;
+            pagoNegociacion = abonoMinimo + honorarios;
+
+            factMes1   = (base * tasaVigente) + totalICS;
+            factMes2a6 = divi(base, plazoNov) + ((base * tasaVigente) + totalICS);
+            var cuotaCapH = divi(base, plazoNov);
+            cuotaEstimada = cuotaCapH + ((base - (6 * cuotaCapH)) * tasaVigente);
+            saldoFinal = base;
+
+        } else {
+            // ================= GxC =================
+            honorarios = 0;
+            base = saldoTotal - abonoMinimo;
+            tasaGxC = num(sessionStorage.NOV_tasaGxC);
+
+            if (tasaGxC <= 0) {
+                gastosCobranza = 0;
+            } else {
+                var valorGxC = (pagoMinimo - abonoMinimo) * (tasaGxC / 100);
+                if (topeMax > 0 && valorGxC > topeMax) { gastosCobranza = topeMax; }
+                else if (valorGxC < topeMin)            { gastosCobranza = topeMin; }
+                else                                    { gastosCobranza = valorGxC; }
+            }
+
+            pagoNegociacion = abonoMinimo;
+            if (tasaGxC > 0) {
+                var cargoNeg = Math.max(abonoMinimo * (tasaGxC / 100), topeMin);
+                if (topeMax > 0 && cargoNeg > topeMax) { cargoNeg = topeMax; }
+                pagoNegociacion += cargoNeg;
+            }
+
+            factMes1   = (base * tasaVigente) + totalICS + gastosCobranza;
+            factMes2a6 = divi(base, plazoNov) + ((base * tasaVigente) + totalICS);
+            cuotaEstimada = divi(base, plazoNov) +
+                ((base - (divi(base, plazoNov) * 6)) * tasaVigente);
+            saldoFinal = base;
+        }
+
+        setFieldValue(NOV.abonoMinimo,         abonoMinimo);
+        setFieldValue(NOV.honorarios,          honorarios);
+        setFieldValue(NOV.tasaGxC,             tasaGxC);
+        setFieldValue(NOV.gastosCobranza,      gastosCobranza);
+        setFieldValue(NOV.factMes1,            factMes1);
+        setFieldValue(NOV.factMes2a6,          factMes2a6);
+        setFieldValue(NOV.cuotaEstimada,       cuotaEstimada);
+        setFieldValue(NOV.saldoFinalDiferir,   saldoFinal);
+        setFieldValue(NOV.pagoParaNegociacion, pagoNegociacion);
+
+        try {
+            if (typeof toggleHonorariosNov === 'function') {
+                toggleHonorariosNov(esHonorarios);
+            }
+        } catch (e2) { console.error("ERROR AL VALIDAR SI ES HONORARIOS"); }
+
+    } catch (error) {
+        console.error('Error en calculoNovacion:', error);
+    } finally {
+        window.NOV_calculando = false;
+    }
+}

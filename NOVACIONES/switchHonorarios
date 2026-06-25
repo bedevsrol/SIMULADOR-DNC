@@ -1,6 +1,6 @@
 <div class="honorarios-container">
     <label class="switch">
-        <input id="check" type="checkbox">
+        <input id="check_novacion" type="checkbox" checked>
         <span class="slider">
             <span class="text-on">SÍ</span>
             <span class="text-off">NO</span>
@@ -8,6 +8,7 @@
     </label>
     <label class="honorarios-label" for="check">¿Aplica honorarios?</label>
 </div>
+
 <style>
     .honorarios-container {
         display: flex;
@@ -15,7 +16,6 @@
         gap: 12px;
         margin-bottom: 20px;
     }
-
     .honorarios-label {
         font-size: 16px;
         font-weight: 600;
@@ -23,17 +23,13 @@
         cursor: pointer;
         user-select: none;
     }
-
     .switch {
         font-size: 17px;
         position: relative;
         display: inline-block;
         width: 4em;
         height: 2em;
-
     }
-
-    /* Switch internal text */
     .text-on,
     .text-off {
         position: absolute;
@@ -44,39 +40,31 @@
         transition: all 0.4s cubic-bezier(0.215, 0.610, 0.355, 1);
         pointer-events: none;
     }
-
     .text-on {
         left: 0.6em;
         color: #0041a4;
         opacity: 0;
         transform: translateY(-50%) translateX(-10px);
     }
-
     .text-off {
         right: 0.6em;
         color: #0041a4;
         opacity: 1;
         transform: translateY(-50%) translateX(0);
     }
-
     .switch input:checked+.slider .text-on {
         opacity: 1;
         transform: translateY(-50%) translateX(0);
     }
-
     .switch input:checked+.slider .text-off {
         opacity: 0;
         transform: translateY(-50%) translateX(10px);
     }
-
-    /* Hide default HTML checkbox */
     .switch input {
         opacity: 0;
         width: 0;
         height: 0;
     }
-
-    /* The slider */
     .slider {
         position: absolute;
         cursor: pointer;
@@ -87,7 +75,6 @@
         overflow: hidden;
         transition: all 0.4s cubic-bezier(0.215, 0.610, 0.355, 1);
     }
-
     .slider:before {
         position: absolute;
         content: "";
@@ -100,7 +87,6 @@
         border-radius: inherit;
         transition: all 0.4s cubic-bezier(0.215, 0.610, 0.355, 1);
     }
-
     .slider:after {
         position: absolute;
         content: "";
@@ -112,26 +98,15 @@
         border-radius: inherit;
         transition: all 0.4s cubic-bezier(0.215, 0.610, 0.355, 1);
     }
-
     .switch input:focus+.slider {
         box-shadow: 0 0 5px #0041a4;
     }
-
     .switch input:checked+.slider:before {
         transform: translateY(0);
     }
-
     .switch input:checked+.slider::after {
         transform: translateX(-150%);
     }
 </style>
 
-function toggleHonorarios(mostrar) {
-    try {
-        visibilityField(NOV.linea,       mostrar); // Línea
-        visibilityField(NOV.tipoCartera, mostrar); // Tipo de Cartera
-        visibilityField(NOV.honorarios,  mostrar); // Honorarios Novación
-    } catch (error) {
-        console.error('Error al mostrar/ocultar honorarios:', error);
-    }
-}
+

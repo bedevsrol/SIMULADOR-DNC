@@ -36,47 +36,47 @@ function valoresPoblamiento() {
   poblarCancelacion()
 
 
-  //novaciones
-  setFieldValue('616e6102-56e5-48e9-bfc2-fce8497e629d', e.dataItem.SaldoTotalObl);
-  setFieldValue('1f7c2b79-87a6-402f-95f2-414aea88a4bf', e.dataItem.PagoMinObl);
-  
-  setFieldValue('e2c2ca76-e568-413d-8aac-b7bd2c3b9f52', e.dataItem.InteresCteObl);                 // Int Corriente
-  setFieldValue('ce31f456-c5d9-4476-a56f-f5f44d2c8827', e.dataItem.InteresMoraObl);                // Int Mora
-  setFieldValue('a710006e-72a9-4388-84ed-cc3b743ef45f', e.dataItem.InteresesExtracontablesObl || 0); // Int Extracontable
-  setFieldValue('51440ec8-1f3c-49fa-8672-15870130cb90', e.dataItem.OtrosCargosExigibles || 0);     // Otros Cargos
+          //novaciones
+          setFieldValue('616e6102-56e5-48e9-bfc2-fce8497e629d', e.dataItem.SaldoTotalObl);
+          setFieldValue('1f7c2b79-87a6-402f-95f2-414aea88a4bf', e.dataItem.PagoMinObl);
+          
+          setFieldValue('e2c2ca76-e568-413d-8aac-b7bd2c3b9f52', e.dataItem.InteresCteObl);                 // Int Corriente
+          setFieldValue('ce31f456-c5d9-4476-a56f-f5f44d2c8827', e.dataItem.InteresMoraObl);                // Int Mora
+          setFieldValue('a710006e-72a9-4388-84ed-cc3b743ef45f', e.dataItem.InteresesExtracontablesObl || 0); // Int Extracontable
+          setFieldValue('51440ec8-1f3c-49fa-8672-15870130cb90', e.dataItem.OtrosCargosExigibles || 0);     // Otros Cargos
+        
+
+          setFieldValue('0cb35f96-ddc9-40e7-b948-8f0d4d86bf79', e.dataItem.DiasMoraObl);
  
-  // --- NOVACIÓN: días de mora (de e.dataItem.DiasMoraObl) al campo numérico ---
-  // OJO: confirma el nombre real de la columna de días en e.dataItem.
-  // En PoblamientoDatos la columna es DIAS_MORA_OBL; en e.dataItem suele ser DiasMoraObl.
-  setFieldValue('0cb35f96-ddc9-40e7-b948-8f0d4d86bf79', e.dataItem.DiasMoraObl);
- 
-  // --- NOVACIÓN: lanzar la consulta de rango GxC y el primer cálculo ---
-  if (typeof consultarRango === 'function') { consultarRango(); }
-  if (typeof registrarSwitchHonorarios === 'function') { registrarSwitchHonorarios(); }
+        // --- NOVACIÓN: lanzar la consulta de rango GxC y el primer cálculo ---
+        if (typeof consultarRango === 'function') { consultarRango(); }
+        if (typeof initSwitchHonorariosNov === 'function') { initSwitchHonorariosNov(); }
+        let idCarteraNov = getIdByPartialText(sessionStorage.TipoCartera, 'baa0e784-8248-45b8-9394-8932fe45094e');
+        setFieldValue('baa0e784-8248-45b8-9394-8932fe45094e', idCarteraNov);
 
 
-  let dropDownList1 = kendo.jQuery("#91d24002-ea79-468e-8375-8fee8964b2f8").data('kendoDropDownList');
-  let dataSource1 = dropDownList1.dataSource;
+        let dropDownList1 = kendo.jQuery("#91d24002-ea79-468e-8375-8fee8964b2f8").data('kendoDropDownList');
+        let dataSource1 = dropDownList1.dataSource;
 
-  // Define el ID del ítem que quieres eliminar
-  let idToRemove = 'AE441B5A-3FB9-4E62-9FF6-96CAD6C877CE';  // El ID que agregaste anteriormente
+        // Define el ID del ítem que quieres eliminar
+        let idToRemove = 'AE441B5A-3FB9-4E62-9FF6-96CAD6C877CE';  // El ID que agregaste anteriormente
 
-  // Busca el ítem en el DataSource y lo elimina
-  let itemToRemove = dataSource1.data().find(item => item.Id === idToRemove);
-  if (itemToRemove) {
-    // Elimina el ítem del DataSource
-    dataSource1.remove(itemToRemove);
+        // Busca el ítem en el DataSource y lo elimina
+        let itemToRemove = dataSource1.data().find(item => item.Id === idToRemove);
+        if (itemToRemove) {
+          // Elimina el ítem del DataSource
+          dataSource1.remove(itemToRemove);
 
-    // También puedes forzar la actualización del dropdown para reflejar el cambio visualmente
-    dropDownList1.refresh();
-  }
+          // También puedes forzar la actualización del dropdown para reflejar el cambio visualmente
+          dropDownList1.refresh();
+        }
 
-  if (e.dataItem.MecanismoAplicaCampana && e.dataItem.MecanismoAplicaCampana.includes("NOVACION")) {
-    let dropDownList = kendo.jQuery("#91d24002-ea79-468e-8375-8fee8964b2f8").data('kendoDropDownList');
+      if (e.dataItem.MecanismoAplicaCampana && e.dataItem.MecanismoAplicaCampana.includes("NOVACION")) {
+        let dropDownList = kendo.jQuery("#91d24002-ea79-468e-8375-8fee8964b2f8").data('kendoDropDownList');
 
-    if (!(sessionStorage.getItem("EdadMoraCl") === "0 - Al día")) {
-      sessionStorage.campanaNovacion = 'si'
-    }
+        if (!(sessionStorage.getItem("EdadMoraCl") === "0 - Al día")) {
+          sessionStorage.campanaNovacion = 'si'
+        }
 
 
     // Obtén el DataSource del DropDownList
@@ -108,9 +108,7 @@ function valoresPoblamiento() {
     dropDownList2.value('1B8E59F0-A514-4EEE-92D7-C200D613A4B5')
     dropDownList2.trigger("change");
   }
-
   setFieldValue('e4b7cc87-de9e-4fa1-9d65-d9595ed2cca2', 0)
-
 }
 
 
@@ -120,4 +118,4 @@ function getIdByPartialText(partialText, elemento) {
   const options = Array.from(select.options); // Convierte a un array
   const matchedOption = options.find(option => option.text.includes(partialText));
   return matchedOption ? matchedOption.value : null;
-} 
+}
