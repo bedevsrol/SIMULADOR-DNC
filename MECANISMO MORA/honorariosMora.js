@@ -17,7 +17,7 @@ function honoraVacios() {
 async function calculoHonorarios() {
     try {
         debugger;
-
+        
         // Obtiene el tipo de honorarios seleccionado en el evento actual
         let tipocartera = e.dataItem.TipoHonorarios;
 
