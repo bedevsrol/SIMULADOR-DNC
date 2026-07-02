@@ -33,6 +33,7 @@ const VISTAS = {
 
     CLIENTE_INFO_ECONOMICA: 11,
     INFORMACION_CLIENTE: 13
+    // Formato fun
 };
 
 const OBSERVATION_SOX_MAP = [
@@ -149,34 +150,20 @@ function inicializarNavegacion() {
         tasaEspecial();
         obligacionCU();
     });
-    //NOVACION PG 1
     $(".left-button").click(() => {
         navegarA(VISTAS.PRINCIPAL);
 
     });
-
     $(".right-button").click(() => {
         navegarA(VISTAS.NOVACIONES_P2);
         llenarCampos();
         // botton a sox
         syncSoxCounter();
     });
-    //NOVACIONES PG2
     $(".left-button2").click(() => {
         navegarA(VISTAS.NOVACIONES_P1);
     });
-
     $(".right-button2").click(() => {
-        navegarA(VISTAS.CLIENTE_INFO_ECONOMICA);
-    });
-    //actividad economica
-
-    $(".left-button3").click(() => {
-        navegarA(VISTAS.NOVACIONES_P2);
-    });
-
-
-    $(".right-button3").click(() => {
         navegarA(VISTAS.INFORMACION_CLIENTE);
     });
 
@@ -271,7 +258,6 @@ function inicializarNavegacion() {
     $(".right-buttonAM3").click(() => {
         navegarA(VISTAS.INFORMACION_CLIENTE);
     });
-
     // Navegacion para la pagina de Información Cliente Actividad Económica 
     // Que se muestra para los mecanismos de Consolidacion y pago mora
     $(".left-buttonC3").click(() => {
@@ -284,11 +270,6 @@ function inicializarNavegacion() {
                 soxMora();
                 syncSoxCounter();
                 break;
-            case "novacion":
-                navegarA(VISTAS.NOVACIONES_P2);
-                llenarCampos();
-                syncSoxCounter();
-                break;
         }
     });
     $(".right-buttonC3").click(() => {
@@ -299,9 +280,6 @@ function inicializarNavegacion() {
                 syncSoxCounter();
                 break;
             case "pagomora":
-                navegarA(VISTAS.INFORMACION_CLIENTE);
-                break;
-            case "novacion":
                 navegarA(VISTAS.INFORMACION_CLIENTE);
                 break;
         }
@@ -337,6 +315,7 @@ function inicializarNavegacion() {
         }
     });
 
+
     //Botones Copiar Sox
     $(".copiar").click(() => {
         copiarTexto();
@@ -360,6 +339,4 @@ function inicializarNavegacion() {
 
 setTimeout(() => {
     inicializarNavegacion()
-}, 7000)
-
-//esto es una prueba 
+}, 7000) 
