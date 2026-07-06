@@ -138,6 +138,9 @@ function inicializarNavegacion() {
 
     // NOVACIONES
     //Principal
+    // Entrada al mecanismo de novación: guarda el tipo de mecanismo en sessionStorage,
+    // navega a la página 1 de novaciones, bloquea campos que no aplican y precarga
+    // el abono, la tasa especial y la obligación con base en el cliente actual.
     $(".novaciones").click(() => {
         sessionStorage.mecanismo = "novacion"
         navegarA(VISTAS.NOVACIONES_P1);
@@ -150,11 +153,14 @@ function inicializarNavegacion() {
         obligacionCU();
     });
     //NOVACION PG 1
+    // Botón "atrás" de la página 1: regresa a la vista principal.
     $(".left-button").click(() => {
         navegarA(VISTAS.PRINCIPAL);
 
     });
 
+    // Botón "siguiente" de la página 1: avanza a la página 2, llena los campos
+    // dependientes y sincroniza el contador de SOX.
     $(".right-button").click(() => {
         navegarA(VISTAS.NOVACIONES_P2);
         llenarCampos();
@@ -162,20 +168,23 @@ function inicializarNavegacion() {
         syncSoxCounter();
     });
     //NOVACIONES PG2
+    // Botón "atrás" de la página 2: regresa a la página 1 de novaciones.
     $(".left-button2").click(() => {
         navegarA(VISTAS.NOVACIONES_P1);
     });
 
+    // Botón "siguiente" de la página 2: avanza a información económica del cliente.
     $(".right-button2").click(() => {
         navegarA(VISTAS.CLIENTE_INFO_ECONOMICA);
     });
     //actividad economica
-
+    // Botón "atrás" de la página de actividad económica: vuelve a la página 2 de novaciones.
     $(".left-button3").click(() => {
         navegarA(VISTAS.NOVACIONES_P2);
     });
 
 
+    // Botón "siguiente" de la página de actividad económica: avanza a información del cliente.
     $(".right-button3").click(() => {
         navegarA(VISTAS.INFORMACION_CLIENTE);
     });

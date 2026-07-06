@@ -1,0 +1,271 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Obligaciones del cliente</title>
+<style>
+:root{
+  --ink:#1A1D1F;
+  --ink-soft:#6F767E;
+  --line:#EFF0F1;
+  --surface:#FFFFFF;
+  --bg-head:#F8F9FA;
+  --brand:#0F4C43;
+
+  --ok-bg:#E7F6EE;   --ok-fg:#1A9C5B;
+  --warn-bg:#FDF3DF; --warn-fg:#B8863C;
+  --danger-bg:#FDECEC; --danger-fg:#D1453D;
+
+  --mono:'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
+  --sans:'Inter', -apple-system, Segoe UI, sans-serif;
+}
+
+*{box-sizing:border-box;}
+
+body{
+  margin:0;
+  background:#F4F5F6;
+  font-family:var(--sans);
+  color:var(--ink);
+}
+
+.page{
+  max-width:1400px;
+  margin:0 auto;
+  padding:32px 24px 60px;
+}
+
+.client-header{
+  display:flex;
+  align-items:center;
+  gap:16px;
+  padding:20px 24px;
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:12px;
+  margin-bottom:20px;
+}
+
+.client-avatar{
+  width:48px;
+  height:48px;
+  border-radius:50%;
+  background:var(--brand);
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:600;
+  font-size:16px;
+  flex-shrink:0;
+}
+
+.client-info h1{
+  margin:0 0 4px;
+  font-size:19px;
+  font-weight:600;
+}
+
+.client-sub{
+  font-size:13px;
+  color:var(--ink-soft);
+}
+
+.client-sub span{
+  color:var(--ink);
+  font-weight:500;
+}
+
+.table-wrap{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:12px;
+  overflow-x:auto;
+}
+
+table{
+  border-collapse:collapse;
+  width:100%;
+  min-width:1700px;
+}
+
+thead th{
+  background:var(--bg-head);
+  text-align:left;
+  font-size:12.5px;
+  font-weight:600;
+  color:var(--ink-soft);
+  padding:14px 16px;
+  border-bottom:1px solid var(--line);
+  white-space:nowrap;
+  position:sticky;
+  top:0;
+}
+
+thead th.num{text-align:right;}
+
+th.sortable{cursor:pointer; user-select:none;}
+.sort-ico{
+  font-size:11px;
+  color:#C6CACD;
+  margin-left:3px;
+}
+
+.col-check{width:44px; text-align:center;}
+.col-menu{width:40px; text-align:center;}
+
+tbody tr{
+  border-bottom:1px solid var(--line);
+  transition:background .12s ease;
+}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:#FAFBFB;}
+
+td{
+  padding:14px 16px;
+  font-size:13.5px;
+  white-space:nowrap;
+}
+
+td.num{text-align:right;}
+td.mono{font-family:var(--mono); font-size:13px;}
+td.prod{font-weight:600;}
+
+input[type="checkbox"]{
+  width:17px;
+  height:17px;
+  accent-color:var(--brand);
+  cursor:pointer;
+}
+
+.badge{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:4px 10px;
+  border-radius:20px;
+  font-size:12px;
+  font-weight:600;
+  white-space:nowrap;
+}
+.badge-ok{     background:var(--ok-bg);     color:var(--ok-fg); }
+.badge-warn{   background:var(--warn-bg);   color:var(--warn-fg); }
+.badge-danger{ background:var(--danger-bg); color:var(--danger-fg); }
+
+.menu-btn{
+  border:none;
+  background:transparent;
+  font-size:16px;
+  color:var(--ink-soft);
+  cursor:pointer;
+  width:28px;
+  height:28px;
+  border-radius:6px;
+}
+.menu-btn:hover{background:var(--bg-head);}
+
+@media (max-width:768px){
+  .page{padding:16px;}
+  .client-header{padding:16px;}
+}
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- ===== Encabezado del cliente ===== -->
+  <!-- Poblar con JS: #clientNombre, #clientId, #clientGrupo, #clientCount -->
+  <div class="client-header">
+    <div class="client-avatar" id="clientAvatar">MR</div>
+    <div class="client-info">
+      <h1 id="clientNombre">Nombre del cliente</h1>
+      <div class="client-sub">
+        ID <span id="clientId">—</span>
+        &nbsp;·&nbsp; Grupo <span id="clientGrupo">—</span>
+        &nbsp;·&nbsp; <span id="clientCount">0</span> obligaciones
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Tabla de obligaciones ===== -->
+  <div class="table-wrap">
+    <table id="oblTable">
+      <thead>
+        <tr>
+          <th class="col-check"><input type="checkbox" id="checkAll"></th>
+          <th data-key="OBL" class="sortable">OBL <span class="sort-ico">⇅</span></th>
+          <th data-key="GRUPO" class="sortable">Grupo <span class="sort-ico">⇅</span></th>
+          <th data-key="MARCA_OBL_026" class="sortable">Marca 026 <span class="sort-ico">⇅</span></th>
+          <th data-key="PRODUCTO" class="sortable">Producto <span class="sort-ico">⇅</span></th>
+          <th data-key="SALDO_TOTAL_OBL" class="sortable num">Saldo total <span class="sort-ico">⇅</span></th>
+          <th data-key="PAGO_MINIMO_OBL" class="sortable num">Pago mínimo <span class="sort-ico">⇅</span></th>
+          <th data-key="DIAS_MORA_OBL" class="sortable num">Días mora <span class="sort-ico">⇅</span></th>
+          <th data-key="CAPITAL_TOTAL_OBL" class="sortable num">Capital total <span class="sort-ico">⇅</span></th>
+          <th data-key="INTERES_CTE_OBL" class="sortable num">Interés cte. <span class="sort-ico">⇅</span></th>
+          <th data-key="INTERES_MORA_OBL" class="sortable num">Interés mora <span class="sort-ico">⇅</span></th>
+          <th data-key="INTERES_EXTRACONTABLES_OBL" class="sortable num">Int. extracontable <span class="sort-ico">⇅</span></th>
+          <th data-key="OTROS_CARGOS_EXIGIBLES" class="sortable num">Otros cargos <span class="sort-ico">⇅</span></th>
+          <th data-key="PRIMA_UNICA" class="sortable num">Prima única <span class="sort-ico">⇅</span></th>
+          <th data-key="INT_GASTOS_NOFACT" class="sortable num">Int./gastos no fact. <span class="sort-ico">⇅</span></th>
+          <th data-key="MARCA_CAMP_CRM" class="sortable">Campaña CRM <span class="sort-ico">⇅</span></th>
+          <th data-key="TIPO_DE_CARTERA" class="sortable">Tipo cartera <span class="sort-ico">⇅</span></th>
+          <th data-key="TIPO_COBRO" class="sortable">Tipo cobro <span class="sort-ico">⇅</span></th>
+          <th class="col-menu"></th>
+        </tr>
+      </thead>
+
+      <!-- Poblar filas aquí con JS. Fila de ejemplo (borrar al integrar datos reales): -->
+      <tbody id="oblBody">
+        <tr data-obl="4400123456">
+          <td class="col-check"><input type="checkbox" class="row-check"></td>
+          <td class="mono">4400123456</td>
+          <td>CONSUMO</td>
+          <td class="mono">S</td>
+          <td class="prod">Tarjeta de crédito</td>
+          <td class="num mono">$5.842.300</td>
+          <td class="num mono">$412.000</td>
+          <td class="num"><span class="badge badge-ok">Al día</span></td>
+          <td class="num mono">$5.210.000</td>
+          <td class="num mono">$632.300</td>
+          <td class="num mono">$0</td>
+          <td class="num mono">$0</td>
+          <td class="num mono">$0</td>
+          <td class="num mono">$0</td>
+          <td class="num mono">$0</td>
+          <td>Fidelización</td>
+          <td>Consumo</td>
+          <td>Preventivo</td>
+          <td class="col-menu"><button class="menu-btn" aria-label="Más opciones">⋮</button></td>
+        </tr>
+        <tr data-obl="4403112233">
+          <td class="col-check"><input type="checkbox" class="row-check"></td>
+          <td class="mono">4403112233</td>
+          <td>CONSUMO</td>
+          <td class="mono">S</td>
+          <td class="prod">Tarjeta de crédito</td>
+          <td class="num mono">$7.654.200</td>
+          <td class="num mono">$540.000</td>
+          <td class="num"><span class="badge badge-danger">78 días</span></td>
+          <td class="num mono">$6.200.000</td>
+          <td class="num mono">$420.000</td>
+          <td class="num mono">$734.200</td>
+          <td class="num mono">$60.000</td>
+          <td class="num mono">$240.000</td>
+          <td class="num mono">$0</td>
+          <td class="num mono">$12.000</td>
+          <td>Castigo próximo</td>
+          <td>Consumo</td>
+          <td>Jurídico</td>
+          <td class="col-menu"><button class="menu-btn" aria-label="Más opciones">⋮</button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+</body>
+</html>
