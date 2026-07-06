@@ -33,6 +33,7 @@ const VISTAS = {
 
     CLIENTE_INFO_ECONOMICA: 11,
     INFORMACION_CLIENTE: 13
+    // Formato fun
 };
 
 const OBSERVATION_SOX_MAP = [
@@ -152,21 +153,28 @@ function inicializarNavegacion() {
         tasaEspecial();
         obligacionCU();
     });
+<<<<<<< HEAD
     //NOVACION PG 1
     // Botón "atrás" de la página 1: regresa a la vista principal.
+=======
+>>>>>>> 63cbda10b0181ae007eba2f4538400a518ca9ec4
     $(".left-button").click(() => {
         navegarA(VISTAS.PRINCIPAL);
 
     });
+<<<<<<< HEAD
 
     // Botón "siguiente" de la página 1: avanza a la página 2, llena los campos
     // dependientes y sincroniza el contador de SOX.
+=======
+>>>>>>> 63cbda10b0181ae007eba2f4538400a518ca9ec4
     $(".right-button").click(() => {
         navegarA(VISTAS.NOVACIONES_P2);
         llenarCampos();
         // botton a sox
         syncSoxCounter();
     });
+<<<<<<< HEAD
     //NOVACIONES PG2
     // Botón "atrás" de la página 2: regresa a la página 1 de novaciones.
     $(".left-button2").click(() => {
@@ -186,6 +194,12 @@ function inicializarNavegacion() {
 
     // Botón "siguiente" de la página de actividad económica: avanza a información del cliente.
     $(".right-button3").click(() => {
+=======
+    $(".left-button2").click(() => {
+        navegarA(VISTAS.NOVACIONES_P1);
+    });
+    $(".right-button2").click(() => {
+>>>>>>> 63cbda10b0181ae007eba2f4538400a518ca9ec4
         navegarA(VISTAS.INFORMACION_CLIENTE);
     });
 
@@ -280,7 +294,6 @@ function inicializarNavegacion() {
     $(".right-buttonAM3").click(() => {
         navegarA(VISTAS.INFORMACION_CLIENTE);
     });
-
     // Navegacion para la pagina de Información Cliente Actividad Económica 
     // Que se muestra para los mecanismos de Consolidacion y pago mora
     $(".left-buttonC3").click(() => {
@@ -293,11 +306,6 @@ function inicializarNavegacion() {
                 soxMora();
                 syncSoxCounter();
                 break;
-            case "novacion":
-                navegarA(VISTAS.NOVACIONES_P2);
-                llenarCampos();
-                syncSoxCounter();
-                break;
         }
     });
     $(".right-buttonC3").click(() => {
@@ -308,9 +316,6 @@ function inicializarNavegacion() {
                 syncSoxCounter();
                 break;
             case "pagomora":
-                navegarA(VISTAS.INFORMACION_CLIENTE);
-                break;
-            case "novacion":
                 navegarA(VISTAS.INFORMACION_CLIENTE);
                 break;
         }
@@ -346,6 +351,7 @@ function inicializarNavegacion() {
         }
     });
 
+
     //Botones Copiar Sox
     $(".copiar").click(() => {
         copiarTexto();
@@ -369,6 +375,4 @@ function inicializarNavegacion() {
 
 setTimeout(() => {
     inicializarNavegacion()
-}, 7000)
-
-//esto es una prueba 
+}, 7000) 
