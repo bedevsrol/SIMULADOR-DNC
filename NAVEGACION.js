@@ -139,9 +139,6 @@ function inicializarNavegacion() {
 
     // NOVACIONES
     //Principal
-    // Entrada al mecanismo de novación: guarda el tipo de mecanismo en sessionStorage,
-    // navega a la página 1 de novaciones, bloquea campos que no aplican y precarga
-    // el abono, la tasa especial y la obligación con base en el cliente actual.
     $(".novaciones").click(() => {
         sessionStorage.mecanismo = "novacion"
         navegarA(VISTAS.NOVACIONES_P1);
@@ -153,53 +150,20 @@ function inicializarNavegacion() {
         tasaEspecial();
         obligacionCU();
     });
-<<<<<<< HEAD
-    //NOVACION PG 1
-    // Botón "atrás" de la página 1: regresa a la vista principal.
-=======
->>>>>>> 63cbda10b0181ae007eba2f4538400a518ca9ec4
     $(".left-button").click(() => {
         navegarA(VISTAS.PRINCIPAL);
 
     });
-<<<<<<< HEAD
-
-    // Botón "siguiente" de la página 1: avanza a la página 2, llena los campos
-    // dependientes y sincroniza el contador de SOX.
-=======
->>>>>>> 63cbda10b0181ae007eba2f4538400a518ca9ec4
     $(".right-button").click(() => {
         navegarA(VISTAS.NOVACIONES_P2);
         llenarCampos();
         // botton a sox
         syncSoxCounter();
     });
-<<<<<<< HEAD
-    //NOVACIONES PG2
-    // Botón "atrás" de la página 2: regresa a la página 1 de novaciones.
-    $(".left-button2").click(() => {
-        navegarA(VISTAS.NOVACIONES_P1);
-    });
-
-    // Botón "siguiente" de la página 2: avanza a información económica del cliente.
-    $(".right-button2").click(() => {
-        navegarA(VISTAS.CLIENTE_INFO_ECONOMICA);
-    });
-    //actividad economica
-    // Botón "atrás" de la página de actividad económica: vuelve a la página 2 de novaciones.
-    $(".left-button3").click(() => {
-        navegarA(VISTAS.NOVACIONES_P2);
-    });
-
-
-    // Botón "siguiente" de la página de actividad económica: avanza a información del cliente.
-    $(".right-button3").click(() => {
-=======
     $(".left-button2").click(() => {
         navegarA(VISTAS.NOVACIONES_P1);
     });
     $(".right-button2").click(() => {
->>>>>>> 63cbda10b0181ae007eba2f4538400a518ca9ec4
         navegarA(VISTAS.INFORMACION_CLIENTE);
     });
 
