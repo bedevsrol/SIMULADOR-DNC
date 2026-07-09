@@ -1,3 +1,4 @@
+
 setTimeout(function () {
     delete sessionStorage.campanamora
     NombreGrupo()
@@ -17,7 +18,7 @@ const VISTAS = {
     NOVACIONES_P2: 3,
 
     AMPLIACION_P1: 4,
-    AMPLIACION_P2: 16,
+    AMPLIACION_P2: 17,
     AMPLIACION_P3: 7,
 
     CANCELACION_TOTAL_PAG1: 5,
@@ -28,12 +29,13 @@ const VISTAS = {
     CONSOLIDACION_P2: 9,
     CONSOLIDACION_P4: 8,
 
-    PAGOMORA_P1: 15,
+    PAGOMORA_P1: 16,
     PAGOMORA_P2: 10,
 
     CLIENTE_INFO_ECONOMICA: 11,
-    INFORMACION_CLIENTE: 13
-    // Formato fun
+    INFORMACION_CLIENTE: 14,
+
+    ITAU_P1: 13
 };
 
 const OBSERVATION_SOX_MAP = [
@@ -94,6 +96,16 @@ function navegarA(vistaIndex) {
 }
 
 function inicializarNavegacion() {
+
+    //ITAU
+    $(".itau").click(() => {
+    navegarA(VISTAS.ITAU_P1);
+    });
+
+     $(".left-buttonI").click(() => {
+        navegarA(VISTAS.PRINCIPAL);
+
+    });
 
     // Consolidacion de productos
     //Principal
@@ -195,10 +207,7 @@ function inicializarNavegacion() {
     $(".cancelacion").click(() => {
         sessionStorage.mecanismo = "cancelacion"
         navegarA(VISTAS.CANCELACION_TOTAL_PAG1);
-        let edadmora = sessionStorage.EdadMoraCl;
-        if (edadmora == "1-30 Días" || edadmora == "31-60 Días") {
-            recalcularcancelacion();
-        }
+        recalcularcancelacion();
     });
     $(".right-buttonCA1").click(() => {
         navegarA(VISTAS.CANCELACION_P2);
@@ -286,7 +295,7 @@ function inicializarNavegacion() {
     });
 
 
-    // navegacion al volver de la pagina de informacion cliente
+    // navegacion al volver de la pagina de informacion cliente FUN
     $(".left-buttonInf").click(() => {
         switch (sessionStorage.mecanismo) {
             case "consolidacion":
@@ -319,6 +328,7 @@ function inicializarNavegacion() {
     //Botones Copiar Sox
     $(".copiar").click(() => {
         copiarTexto();
+        llenarCampos();
     });
     $(".copiar2").click(() => {
         copiarTexto2();
@@ -340,3 +350,5 @@ function inicializarNavegacion() {
 setTimeout(() => {
     inicializarNavegacion()
 }, 7000) 
+
+

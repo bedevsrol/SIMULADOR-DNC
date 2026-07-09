@@ -141,7 +141,6 @@ function arranqueGastoNov() {
     intentar();
 }
 
-
 //funciones consulta honorarios novacion
 function honoranovacionvacio(){}
  
@@ -206,8 +205,6 @@ function onDiasMoraChange(e) {
     }, 500);
 }
 
-
-
 function esHonorariosNov() {
     var GID_GASTO = '7f0df958-9e6d-48ba-95e3-0b3a8bc2e0fe';
     var el = document.getElementById(GID_GASTO);
@@ -225,6 +222,7 @@ function onGastoNovChange(e) {
     }
     if (typeof calculoNovacion === 'function') { calculoNovacion(); }
 }
+
 function arranqueGastoNov() {
     var GID_GASTO = '7f0df958-9e6d-48ba-95e3-0b3a8bc2e0fe';
     var intentos = 0;
