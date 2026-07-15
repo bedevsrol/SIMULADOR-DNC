@@ -1,0 +1,44 @@
+<div class="contenedor">
+    <button class= "btnSimulador itau"
+        >itaú</button>
+    <button class="btnSimulador consolidacion">Consolidación de Productos</button>
+    <button class="btnSimulador novaciones">Novaciones</button>
+    <button class="btnSimulador pagomora">Pago Mora</button>
+    <button class="btnSimulador cancelacion">Cancelación Total</button>
+    <button class="btnSimulador ampliacion">Ampliación</button>
+</div>
+
+<style>
+  .contenedor {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-wrap: wrap; 
+      gap: 10px; 
+      margin: 20px 0; 
+  }
+
+  .btnSimulador {
+      border: none;
+      border-radius: 15px;
+      height: 50px;
+      color: white;
+      background-color: #0041a4;
+      font-weight: bold;
+      flex: 1 1 150px; 
+      max-width: 200px; 
+      text-align: center;
+  }
+
+  .btnSimulador:hover {
+      background-color: #00317e;
+      box-shadow: 0 0 10px #00317e;
+  }
+
+  @media (max-width: 768px) {
+      .btnSimulador {
+          flex: 1 1 100%; 
+          max-width: 100%;
+      }
+  }
+</style>

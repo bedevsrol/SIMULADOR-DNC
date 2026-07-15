@@ -1,4 +1,3 @@
-//traer informacion del poblamiento a base del documento
 function Obligacionvacia() {
 }
 async function Obligacion() {
@@ -12,7 +11,8 @@ async function Obligacion() {
 
         let response = await execQuery(`EXEC SimiladorDNC_Lappiz_EmailConfirmed @sw = 10,
                                          @documentocliente= ${documentocliente}, 
-                                         @fecha = '${fecha}', @grupo = '${sessionStorage.Grupo}',
+                                         @fecha = '${fecha}', 
+                                         @grupo = '${sessionStorage.Grupo}',
                                          @filtro = '${sessionStorage.Filtro}',
                                          @tipodoc = '${tipodoc}'`)
         if (response[0][0]) {
