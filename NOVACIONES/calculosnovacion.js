@@ -1,4 +1,4 @@
-//cALCULOS NOVACIONES
+//Calculos Novaciones
 function calculoNovacion() {
  
     var NOV = {
@@ -28,8 +28,11 @@ function calculoNovacion() {
     window.NOV_calculando = true;
  
     try {
-        var estado = esHonorariosNov();           // 'HONORARIOS' | true | false | 'NINGUNO'
-        var esHonorarios = (estado === true || estado === 'HONORARIOS');
+        var estado = esHonorariosNov();           // 'HONORARIOS' | true | false | 'NINGUNO' | 'PILOTOS'
+        // esHonorarios conserva 'PILOTOS' para diferenciar la rama con tasaGxC
+        var esHonorarios = (estado === true || estado === 'HONORARIOS') ? true
+                         : (estado === 'PILOTOS') ? 'PILOTOS'
+                         : false;
         var esNinguno    = (estado === 'NINGUNO');
  
         var saldoTotal  = num(getFieldValue(NOV.saldoTotal));
@@ -53,7 +56,7 @@ function calculoNovacion() {
         var topeMax = num(sessionStorage.NOV_topeMax);
  
         var tipoCobro = (sessionStorage.TipoCobro || '').toUpperCase();
-        if (tipoCobro === 'GASTOS_90') { topeMax = 0; }
+        if (tipoCobro === 'GASTOS_90' || esHonorarios === 'PILOTOS') { topeMax = 0; }
  
         var abonoMinimo = pagoMinimo * (porMora / 100);
         var tasaVigente = tasa / 100;
@@ -62,14 +65,16 @@ function calculoNovacion() {
         var base, tasaGxC, gastosCobranza, pagoNegociacion;
         var factMes1, factMes2a6, cuotaEstimada, saldoFinal, honorarios;
  
-        if (esHonorarios) {
-            // ================= MECANISMO HONORARIOS =================
-            var porcCartera = num(sessionStorage.NOV_porcCartera);
-            honorarios = piso((abonoMinimo * porcCartera) / 100);
+        if (esHonorarios === true || esHonorarios === 'HONORARIOS' || esHonorarios === 'PILOTOS') {
+            // ============ HONORARIOS / PILOTOS ============
+            var porcHon = (esHonorarios === 'PILOTOS')
+                ? num(sessionStorage.NOV_tasaGxC)        // PILOTOS usa tasa GxC
+                : num(sessionStorage.NOV_porcCartera);   // Honorarios usa % cartera
+            honorarios = piso((abonoMinimo * porcHon) / 100);
  
             base = saldoTotal - (abonoMinimo + honorarios);
  
-            tasaGxC = 0;
+            tasaGxC = (esHonorarios === 'PILOTOS') ? num(sessionStorage.NOV_tasaGxC) : 0;
             gastosCobranza = 0;
             pagoNegociacion = abonoMinimo + honorarios;
  
@@ -84,7 +89,6 @@ function calculoNovacion() {
             honorarios = 0;
             base = saldoTotal - abonoMinimo;
  
-            // No aplica -> tasaGxC 0 (gastos 0). GxC normal -> lee la tasa.
             tasaGxC = esNinguno ? 0 : num(sessionStorage.NOV_tasaGxC);
  
             if (tasaGxC <= 0) {
@@ -112,13 +116,15 @@ function calculoNovacion() {
  
         setFieldValue(NOV.abonoMinimo,         abonoMinimo);
         setFieldValue(NOV.honorarios,          honorarios);
+        setFieldValue('33e26099-22ea-4c29-8e5e-02346e3e366a', (esHonorarios === 'PILOTOS') ? honorarios : 0);
         setFieldValue(NOV.tasaGxC,             tasaGxC);
         setFieldValue(NOV.gastosCobranza,      gastosCobranza);
         setFieldValue(NOV.factMes1,            factMes1);
         setFieldValue(NOV.factMes2a6,          factMes2a6);
         setFieldValue(NOV.cuotaEstimada,       cuotaEstimada);
         setFieldValue(NOV.saldoFinalDiferir,   saldoFinal);
-        setFieldValue(NOV.pagoParaNegociacion, pagoNegociacion);
+        
+        setFieldValue(NOV.pagoParaNegociacion, Math.round(pagoNegociacion));
  
         try {
             if (typeof toggleHonorariosNov === 'function') {
@@ -177,6 +183,205 @@ function consultarRango() {
         if (typeof calculoNovacion === 'function') { calculoNovacion(); }
     }
 }
+//funciones consulta honorarios novacion
+
+function honoranovacionvacio(){}
+ 
+async function calculoHonorariosNov() {
+    function num(v) { return isNaN(parseFloat(v)) ? 0 : parseFloat(v); }
+ 
+    var ID_TIPO_CARTERA = 'baa0e784-8248-45b8-9394-8932fe45094e';
+    var GID_LINEA       = '#46155d51-2885-490a-8a71-d75a35da95b4';
+ 
+    try {
+        var codigoLinea = sessionStorage.Linea;
+        if (codigoLinea) {
+            try {
+                var nombreLinea = null;
+ 
+                if (codigoLinea.indexOf('0900') === 0) {
+                    nombreLinea = 'Tarjeta de Credito [Cualquier Franquicia]';
+                } else {
+                    var qLinea = "SELECT NomProductos FROM SimiladorDNC_Lappiz_LineaProducto WHERE CodCodigo = '" + codigoLinea + "'";
+                    var rLinea = await execQuery(qLinea);
+                    if (rLinea && rLinea[0] && rLinea[0][0]) {
+                        nombreLinea = rLinea[0][0].NomProductos;
+                    }
+                }
+ 
+                // Seleccionar la opción en el dropdown
+                if (nombreLinea) {
+                    var ddLinea = kendo.jQuery(GID_LINEA).data("kendoDropDownList");
+                    if (ddLinea) {
+                        var itemLinea = ddLinea.dataSource.data().find(function (x) {
+                            return x.NomProductos === nombreLinea;
+                        });
+                        if (itemLinea) {
+                            ddLinea.value(itemLinea.Id);
+                            ddLinea.trigger("change");
+                        }
+                    }
+                }
+            } catch (eL) { console.error("Error cargando línea:", eL); }
+        }
+ 
+        var tipoCartera = '';
+        var widget = document.querySelector('[aria-owns="' + ID_TIPO_CARTERA + '_listbox"]');
+        if (widget) {
+            var kInput = widget.querySelector('.k-input');
+            if (kInput) { tipoCartera = kInput.textContent.trim(); }
+        }
+ 
+        if (!tipoCartera) {
+            sessionStorage.NOV_porcCartera = 0;
+        } else {
+            var query = "select ValorHonorarios,TipoHonorarios from SimiladorDNC_Lappiz_dethonorarios where TipoHonorarios = '" + tipoCartera + "'";
+            var response = await execQuery(query);
+            var fila = (response && response[0] && response[0][0]) ? response[0][0] : null;
+            sessionStorage.NOV_porcCartera = fila ? num(fila.ValorHonorarios) : 0;
+        }
+ 
+        if (typeof calculoNovacion === 'function') { calculoNovacion(); }
+ 
+    } catch (error) {
+        console.error('[HON] ERROR:', error);
+ }
+}
+
+function onDiasMoraChange(e) {
+    if (window.NOV_diasMoraTimer) { clearTimeout(window.NOV_diasMoraTimer); }
+    window.NOV_diasMoraTimer = setTimeout(function () {
+        if (typeof consultarRango === 'function') { consultarRango(); }
+    }, 500);
+}
+
+
+
+function esHonorariosNov() {
+    var GID_GASTO = '7f0df958-9e6d-48ba-95e3-0b3a8bc2e0fe';
+    var el = document.getElementById(GID_GASTO);
+    var texto = '';
+    if (el && el.selectedOptions && el.selectedOptions[0]) {
+        texto = el.selectedOptions[0].textContent.trim().toUpperCase();
+    }
+    if (texto.indexOf('NO APLICA') === 0) { return 'NINGUNO'; }   // <-- agregar
+    if (texto.indexOf('PILOTO') === 0) { return 'PILOTOS'; }
+    return texto.indexOf('HONORARIO') === 0;
+}
+ 
+/* valuechanged del select -> aplica visibilidad + recalcula */
+function onGastoNovChange(e) {
+    if (typeof toggleHonorariosNov === 'function' && typeof esHonorariosNov === 'function') {
+        toggleHonorariosNov(esHonorariosNov());
+    }
+    if (typeof calculoNovacion === 'function') { calculoNovacion(); }
+}
+function arranqueGastoNov() {
+    var GID_GASTO = '7f0df958-9e6d-48ba-95e3-0b3a8bc2e0fe';
+    var intentos = 0;
+    function intentar() {
+        var widget = document.querySelector('[aria-owns="' + GID_GASTO + '_listbox"]');
+        if (!widget) {
+            if (intentos < 25) { intentos++; setTimeout(intentar, 200); return; }
+            return;
+        }
+        // Aplica visibilidad según el valor actual del dropdown
+        if (typeof esHonorariosNov === 'function' && typeof toggleHonorariosNov === 'function') {
+            toggleHonorariosNov(esHonorariosNov());
+        }
+    }
+    intentar();
+}
+
+
+
+
+//funciones listado novaciones
+
+function toggleHonorariosNov(on) {
+    // Honorarios: visible solo en HONORARIOS
+    var mostrarHon = (on === true || on === 'HONORARIOS');
+    // Campo PILOTOS propio: visible solo en PILOTOS
+    var mostrarPilotos = (on === 'PILOTOS');
+    // Tasa GxC%: visible en GASTOS y PILOTOS
+    var mostrarTasaGxC = (on === false || on === 'GASTOS' || on === 'PILOTOS');
+    // Gastos GxC (valor): visible solo en GASTOS
+    var mostrarGastosGxC = (on === false || on === 'GASTOS');
+ 
+    try { visibilityField('075c9be0-baad-48b2-864d-acae840b7256', mostrarHon); } catch (e) {}       // Honorarios
+    try { visibilityField('33e26099-22ea-4c29-8e5e-02346e3e366a', mostrarPilotos); } catch (e) {}    // PILOTOS
+    try { visibilityField('435298fd-5cda-4327-9e83-079eda46f0a9', mostrarTasaGxC); } catch (e) {}    // Tasa GxC %
+    try { visibilityField('3300e7e1-8d86-47d1-b709-2aa4773ec615', mostrarGastosGxC); } catch (e) {}  // Gastos GxC
+}
+
+function initGastoNov() {
+    var GID_GASTO = '7f0df958-9e6d-48ba-95e3-0b3a8bc2e0fe';
+    var tipo = (sessionStorage.TipoCobro || '').toUpperCase().trim();
+    var objetivo = (tipo.indexOf('HONORARIO') === 0) ? 'HONORARIO'
+                 : (tipo.indexOf('GASTOS_90') === 0) ? 'PILOTO'
+                 : 'GASTO';
+
+    console.log('initGastoNov -> TipoCobro:', JSON.stringify(tipo), '| objetivo:', objetivo);
+
+    var el = document.getElementById(GID_GASTO);
+    if (el) {
+        for (var i = 0; i < el.options.length; i++) {
+            var textoOpc = el.options[i].text.toUpperCase();
+            if (objetivo === 'GASTO') {
+                // "GASTO" pero NO "PILOTO" (evita cruce)
+                if (textoOpc.indexOf('GASTO') !== -1 && textoOpc.indexOf('PILOTO') === -1) {
+                    el.selectedIndex = i;
+                    el.dispatchEvent(new Event('change', { bubbles: true }));
+                    break;
+                }
+            } else {
+                if (textoOpc.indexOf(objetivo) !== -1) {
+                    el.selectedIndex = i;
+                    el.dispatchEvent(new Event('change', { bubbles: true }));
+                    break;
+                }
+            }
+        }
+        console.log('initGastoNov -> seleccionado:', el.selectedOptions[0] ? el.selectedOptions[0].text : 'NADA');
+    }
+
+    if (typeof toggleHonorariosNov === 'function' && typeof esHonorariosNov === 'function') {
+        toggleHonorariosNov(esHonorariosNov());
+    }
+    if (typeof calculoNovacion === 'function') { calculoNovacion(); }
+}
+
+//
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 function valoresPoblamiento() {
   //Pantalla Principal
