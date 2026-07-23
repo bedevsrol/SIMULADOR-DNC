@@ -1,0 +1,384 @@
+Simulador DNC Lappiz — Novaciones y ajustes
+
+
+===========================================================
+1. MIGRACIÓN NOVACIONES (PowerApps → Simulador DNC)
+===========================================================
+
+Objetivo: migrar el mecanismo de NOVACIÓN al Simulador DNC LAPPIZ,
+
+1.1 Funciones creadas:
+    - calculoNovacion()            → cálculo principal (base, cuotas, honorarios, GxC)
+
+    - consultarRango()             → consulta tabla rangosGastosCobranza según días de mora
+                                     Guarda: NOV_topeMin, NOV_topeMax, NOV_tasaGxC, porMora
+
+    - calculoHonorariosNov()       → consulta % de honorarios por Tipo de Cartera
+                                     Guarda NOV_porcCartera. Carga línea con caso 0900.
+
+    - esHonorariosNov()            → lee el <select> nativo del dropdown Honorarios/GxC
+                                     Devuelve: 'HONORARIOS'|true, 'PILOTOS', 'NINGUNO' o false
+
+    - toggleHonorariosNov()        → muestra/oculta campos según el estado del dropdown
+
+    - onGastoNovChange()           → valuechanged del dropdown (aplica toggle + recalcula)
+
+    - initGastoNov()               → data cargada: selecciona la opción según TipoCobro
+
+    - onDiasMoraChange()           → valuechanged de días de mora CON DEBOUNCE 500ms
+                                     Evita consultas repetidas en cada tecla
+
+    - onPagoNegociacionChange()    → valuechanged del pago negociación CON GUARD anti-bucle
+                                     (usa window.NOV_calculando)
+
+1.2 IDs de campos NOVACIÓN:
+    ENTRADAS:
+      - pagoMinimo:    1f7c2b79-87a6-402f-95f2-414aea88a4bf
+      - tasa:          b76668b5-0710-4eee-9718-a2633605c35e
+      - plazo:         9382c5a1-0445-4ed9-a785-850d06da2cd2
+      - saldoTotal:    616e6102-56e5-48e9-bfc2-fce8497e629d
+      - intCte:        e2c2ca76-e568-413d-8aac-b7bd2c3b9f52
+      - intExtra:      a710006e-72a9-4388-84ed-cc3b743ef45f
+      - intMora:       ce31f456-c5d9-4476-a56f-f5f44d2c8827
+      - otrosCargos:   51440ec8-1f3c-49fa-8672-15870130cb90
+      - diasMora:      0cb35f96-ddc9-40e7-b948-8f0d4d86bf79
+
+    SALIDAS:
+      - abonoMinimo:         4cbf2d64-0442-4c98-964f-e741a6a4e6a1
+      - tasaGxC:             435298fd-5cda-4327-9e83-079eda46f0a9
+      - gastosCobranza:      3300e7e1-8d86-47d1-b709-2aa4773ec615
+      - factMes1:            eb81310f-a2f4-4cac-8dee-cd877f840a0f
+      - factMes2a6:          9f4dc8d9-4df5-46b4-89b5-4e9271b003eb
+      - cuotaEstimada:       d157fb29-fd6f-450b-b637-8fa18c824cd2
+      - saldoFinalDiferir:   c6923383-8eec-4efe-81a5-954ce52b8882
+      - pagoParaNegociacion: 92bcba6d-4dab-459e-bd8f-164da7eeb526
+
+    DROPDOWNS:
+      - Línea N:              46155d51-2885-490a-8a71-d75a35da95b4  (Kendo)
+      - Tipo de Cartera N:    baa0e784-8248-45b8-9394-8932fe45094e  (Kendo)
+      - ¿Honorarios o GxC?:   7f0df958-9e6d-48ba-95e3-0b3a8bc2e0fe  (<select> NATIVO)
+
+    HONORARIOS:
+      - Honorarios:           075c9be0-baad-48b2-864d-acae840b7256
+      - Honorarios PILOTOS N: 33e26099-22ea-4c29-8e5e-02346e3e366a
+
+
+===========================================================
+2. FÓRMULAS DE CÁLCULO (verificadas con SON FOR 020)
+===========================================================
+
+COMUNES:
+  abonoMinimo = pagoMinimo × (porMora/100)
+  tasaVigente = tasa/100
+  totalICS = (intCte + intExtra + intMora + otrosCargos) / 6
+
+CRITERIO: piso() SOLO aplica al valor de honorarios.
+         Los demás campos van con decimales sin piso.
+
+RAMA HONORARIOS:
+  honorarios = piso((abonoMinimo × NOV_porcCartera) / 100)
+  base = saldoTotal − (abonoMinimo + honorarios)
+  pagoNegociacion = abonoMinimo + honorarios
+  factMes1 = (base × tasaVigente) + totalICS
+  factMes2a6 = (base/plazo) + ((base × tasaVigente) + totalICS)   ← SÍ lleva totalICS
+  cuotaEstimada = (base/plazo) + ((base − 6×(base/plazo)) × tasaVigente)
+  saldoFinal = base
+
+RAMA GxC (Gastos por cobranza):
+  base = saldoTotal − abonoMinimo
+  gastosCobranza = clamp((pagoMin−abono)×tasaGxC/100, topeMin, topeMax)
+  pagoNegociacion = abonoMinimo + clamp(abonoMin×tasaGxC/100, topeMin, topeMax)
+  factMes1 = (base × tasaVigente) + totalICS + gastosCobranza
+  factMes2a6 = (base/plazo) + ((base × tasaVigente) + totalICS)
+  cuotaEstimada = (base/plazo) + ((base − 6×(base/plazo)) × tasaVigente)
+
+RAMA "NO APLICA":
+  honorarios = 0, tasaGxC = 0, gastosCobranza = 0
+  Cuotas se calculan igual que GxC pero con gasto en 0
+  base = saldoTotal − abonoMinimo
+
+RAMA PILOTOS (GASTOS_90 sin tope):
+  Misma lógica de HONORARIOS pero usa NOV_tasaGxC en vez de NOV_porcCartera
+  honorarios = piso((abonoMinimo × NOV_tasaGxC) / 100)
+  El resultado se puebla en campo Honorarios PILOTOS N (33e26099).
+  Sin topes (por rama honorarios).
+  Además: si tipoCobro === 'GASTOS_90' → topeMax = 0.
+
+
+===========================================================
+3. MIGRACIÓN SWITCH → DROPDOWN "¿Honorarios o GxC?"
+===========================================================
+
+Se reemplazó el switch booleano #check_novacion por un <select> nativo
+con 4 opciones (además de "Seleccione un registro"):
+  - "No aplica"
+  - "Gastos por cobranza"
+  - "Honorarios"
+  - "PILOTOS - Call int tabla GXC"
+
+Cambios clave:
+  - esHonorariosNov() lee selectedOptions[0].textContent (no aria-owns/kendo).
+  - initGastoNov mapea TipoCobro a la opción:
+      HONORARIO(S) → Honorarios
+      GASTOS_90    → PILOTOS
+      resto GASTOS → Gastos por cobranza
+  - Selección por DOM (selectedIndex + dispatchEvent 'change'), NO por setFieldValue.
+  - Se eliminó el HTML/CSS del switch anterior.
+
+
+===========================================================
+4. VISIBILIDAD DE CAMPOS SEGÚN ESTADO
+===========================================================
+
+toggleHonorariosNov(estado):
+  HONORARIOS → visible: Honorarios (075c9be0)
+  GASTOS     → visibles: Tasa GxC% + Gastos GxC
+  PILOTOS    → visibles: Tasa GxC% + Honorarios PILOTOS N (33e26099)
+  NINGUNO    → todos ocultos
+
+
+===========================================================
+5. VALUECHANGED CONFIGURADOS EN LAPPIZ
+===========================================================
+
+  - Dropdown ¿Honorarios o GxC? (7f0df958) → onGastoNovChange
+  - Tipo de Cartera N (baa0e784)           → calculoHonorariosNov
+  - Días de mora (0cb35f96)                → onDiasMoraChange (con debounce)
+  - Pago negociación (92bcba6d)            → onPagoNegociacionChange (con guard)
+
+
+===========================================================
+6. valoresPoblamiento (data cargada) — bloque NOVACIÓN
+===========================================================
+
+Se restauró el bloque completo que se había perdido:
+  - setFieldValue de saldoTotal, pagoMinimo, intCte, intExtra, intMora, otrosCargos.
+  - setFieldValue de días de mora.
+  - Selección de Tipo de Cartera con getIdByPartialText → dispara calculoHonorariosNov.
+  - Llamada a initGastoNov() → selecciona opción del dropdown según TipoCobro.
+  - Llamada a consultarRango() → topes + porMora + tasaGxC + recalcula.
+
+También se agregó:
+  - setFieldValue del tipo de documento (0eeacfd7) copiando de 15fb0de1.
+  - Restauración de marca de obligación con getIdByPartialText de MarcaObl026.
+
+
+===========================================================
+7. onDiasMoraChange — DEBOUNCE (500ms)
+===========================================================
+
+Evita consultar la BD en cada tecla/flecha:
+  function onDiasMoraChange(e) {
+      if (window.NOV_diasMoraTimer) { clearTimeout(window.NOV_diasMoraTimer); }
+      window.NOV_diasMoraTimer = setTimeout(function () {
+          if (typeof consultarRango === 'function') { consultarRango(); }
+      }, 500);
+  }
+
+
+===========================================================
+8. onPagoNegociacionChange — ANTI-BUCLE (guard)
+===========================================================
+
+Evita bucle infinito con el recálculo automático:
+  function onPagoNegociacionChange(e) {
+      if (window.NOV_calculando) { return; }
+      setFieldValue('1f7c2b79-...', e.value);   // copia a pago mínimo
+      validacion();
+      calculoNovacion();
+  }
+
+En calculoNovacion se marca window.NOV_calculando = true al inicio,
+y = false en el finally.
+
+
+===========================================================
+9. CASOS ESPECIALES DE NEGOCIO
+===========================================================
+
+9.1 Línea 0900 = Tarjeta de Crédito (novación):
+    En calculoHonorariosNov / cargaHonorariosNov, si sessionStorage.Linea
+    empieza con '0900' → selecciona línea fija 'Tarjeta de Credito [Cualquier Franquicia]'
+    SIN consultar BD. Otros códigos: consulta normal.
+
+9.2 GASTOS_90 sin tope máximo:
+    En calculoNovacion: if (tipoCobro === 'GASTOS_90') { topeMax = 0; }
+    En initGastoNov: TipoCobro='GASTOS_90' → selecciona opción PILOTOS.
+
+9.3 Tabla rangosGastosCobranza:
+    execQuery NO acepta WHERE en esta tabla → 'select *' y filtrar en JS
+    (loop entre MinDias/MaxDias). Columnas: TopeMinimo, TopeMaximo,
+    PorcTasaGastoCobranza (×100), PorcAbonoMinimo (×100).
+
+9.4 % de honorarios por cartera:
+    Consulta: SELECT ValorHonorarios,TipoHonorarios FROM
+    SimiladorDNC_Lappiz_dethonorarios WHERE TipoHonorarios='<texto>'
+    Se guarda una sola vez en sessionStorage.NOV_porcCartera.
+    Porcentajes: Consumo 18.5%, Comercial 10.5%, Vehículos 14.28%.
+
+
+===========================================================
+10. REFACTOR HÍBRIDO (mora + novación)
+===========================================================
+
+Se plantearon las funciones genéricas compartidas:
+  - ListHonorarios(mecanismo)      → visibilidad por mecanismo (novación delega a toggleHonorariosNov)
+  - CargaCamposHonorarios(...)     → genérica para mora; si mecanismo='novacion' delega a cargaHonorariosNov
+  - cargaHonorariosNov(...)        → línea con caso 0900 + cartera + % NOV_porcCartera
+
+
+===========================================================
+11. AJUSTES ADICIONALES
+===========================================================
+
+11.1 Redondeo del pago negociación:
+     setFieldValue(NOV.pagoParaNegociacion, Math.round(pagoNegociacion));
+     Redondeo solo al setear, sin afectar cálculos internos.
+
+11.2 Blindaje de llenarCampos (SOX):
+     Helper textoSelect(id) que devuelve '' si el <select> no existe,
+     para blindar los campos actividadEconomica (13a8a1c2) y
+     ocupacionIngresosAd (10d62ee5) que salen NULL.
+
+
+===========================================================
+12. INTEGRACIÓN ITAU (Obligacion / obligacionesitahu)
+===========================================================
+
+Nueva función obligacionesitahu(data):
+  - Filtra obligaciones donde Grupo === "ITAU".
+  - Muestra cards con Producto, Cartera, Cobro, Línea (resuelta por consulta),
+    intereses, saldo, honorarios, etc.
+  - Blindaje: si el div consolidacionitahu no existe → return (no revienta).
+  - Botón .btnSimulador.itau: escondido por CSS por defecto (display: none),
+    se muestra con style.display='inline-block' SÓLO si hay obligaciones ITAU.
+  - Sin formato de moneda para evitar duplicar formatMoney.
+
+En Obligacion:
+  Se agregó la llamada obligacionesitahu(response[0]) después de
+  obligacionConsolidacion(response[0]).
+
+
+===========================================================
+13. CONSOLIDACIÓN — CAMPO HONORARIOS Y SALDO RESTADO
+===========================================================
+
+En obligacionConsolidacion, dentro del data.forEach:
+  var honorarios = parseFloat(item.CustomNumber1) || 0;
+  var saldoRestado = (parseFloat(item.SaldoTotalObl) || 0) - honorarios;
+
+Cambios en el array fields:
+  { label: "Saldo Total *", value: saldoRestado },   // ya restado
+  { label: "Honorarios",    value: honorarios },     // campo nuevo
+
+Con esto:
+  - "Saldo Total *" muestra SaldoTotalObl − CustomNumber1.
+  - Nuevo campo Honorarios visible con CustomNumber1.
+  - CalculosConsolidacion NO se toca: sumarvalor('Saldo Total *') suma
+    el valor ya restado, y saldoDesembolsar queda correcto sin cambios.
+
+
+===========================================================
+14. PATRONES / LECCIONES LAPPIZ (importante)
+===========================================================
+
+  - Todas las reglas se concatenan y hacen eval en un solo wrapper.
+    → Cuidado con funciones duplicadas (already declared) y variables sin var.
+  - Funciones nativas (getFieldValue, setFieldValue, visibilityField, execQuery)
+    NO existen en la consola del navegador; solo dentro del wrapper.
+  - Lappiz NO permite código suelto/IIFE después del último }.
+    Solo acepta funciones declaradas; el arranque va por valuechanged.
+  - e.dataItem solo existe dentro de valoresPoblamiento.
+  - sessionStorage guarda solo strings.
+  - Dropdown Kendo: leer por aria-owns / .k-input, o kendo.jQuery('#GUID')
+    con .value() + .trigger('change').
+  - <select> nativo: leer por selectedOptions[0].textContent;
+    seleccionar por selectedIndex + dispatchEvent('change').
+
+
+===========================================================
+15. PENDIENTES / OBSERVACIONES
+===========================================================
+
+  - Error `abono is not defined`: viene del onclick de un botón, NO de
+    las funciones del compilado. Buscar validacion(abono) o abono suelto
+    en la configuración del botón en Lappiz.
+
+  - Errores 500 recurrentes en producción de test para
+    SimiladorDNC_Lappiz_PoblamientoDatos y SimiladorDNC_Lappiz_TasasVigentes:
+    NO es problema del código de novación. Reportar al equipo de backend
+    de txtest.lappiz.io. Cuando falla el 500, valoresPoblamiento revienta
+    en CalculosMora y nunca llega al bloque de novación.
+
+  - obligacionCU: el ITEM_ID 'AE441B5A-3FB9-4E62-9FF6-96CAD6C877Q1'
+    termina en "Q1" (no GUID válido). No romperá el insert, pero revisar.
+    Además el insert debe usar 'Id' (mayúscula) como key, no 'id'.
+
+  - Arranque en "No aplica" (data creada): pendiente. Lappiz no permite
+    código suelto; el default del <select> es "Seleccione un registro"
+    y no se puede cambiar. La visibilidad queda oculta hasta que el
+    usuario elija.
+
+
+===========================================================
+16. REFERENCIAS DOCUMENTACION & PROGRAMA (ping a código real)
+===========================================================
+
+16.1 Migración novación (secciones 1-2):
+  - calculoNovacion()            → NOVACIONES/calculosnovacion.js:2
+  - consultarRango()             → NOVACIONES/calculosnovacion.js:143
+  - calculoHonorariosNov()       → NOVACIONES/calculosnovacion.js:190 (repetida en :490)
+  - esHonorariosNov()            → NOVACIONES/calculosnovacion.js:260 (repetida en :560)
+  - onGastoNovChange()           → NOVACIONES/calculosnovacion.js:273 (repetida en :572)
+  - initGastoNov()               → NOVACIONES/calculosnovacion.js:317 (repetida en :595)
+  - onDiasMoraChange()           → NOVACIONES/calculosnovacion.js:251 (repetida en :551)
+  - toggleHonorariosNov()        → NOVACIONES/calculosnovacion.js:301
+  - onPagoNegociacionChange()    → no existe como función propia; el guard
+                                     window.NOV_calculando vive dentro de
+                                     calculoNovacion() en :28 y :138.
+
+16.2 Dropdown y visibilidad (secciones 3-4):
+  - esHonorariosNov (lectura select nativo) → calculosnovacion.js:260-270
+  - toggleHonorariosNov                     → calculosnovacion.js:301-315
+  - HTML/CSS del switch viejo (referencia)  → NOVACIONES/switchHonorarios
+
+16.3 valoresPoblamiento (sección 6):
+  → NOVACIONES/calculosnovacion.js:386 (versión activa)
+  Copia de referencia anterior (desactualizada) → GENERAL/valoresPoblamiento.js
+
+16.4 Casos especiales (sección 9):
+  - 9.1 línea 0900              → calculosnovacion.js:202
+  - 9.2 GASTOS_90 sin tope       → calculosnovacion.js:59
+  - 9.3 rangosGastosCobranza     → calculosnovacion.js:150
+                                    datos: NOVACIONES/rangos_gastos_cobranzas.csv
+  - 9.4 % honorarios por cartera → calculosnovacion.js:238
+
+16.5 Refactor híbrido (sección 10):
+  ListHonorarios / cargaHonorariosNov → no existen con ese nombre.
+  Equivalente más cercano: CargaCamposHonorarios en
+  MECANISMO MORA/honorariosMora.js:91 (solo mora, sin delegar a novación).
+
+16.6 Ajustes adicionales (sección 11):
+  - 11.1 Redondeo pago negociación → calculosnovacion.js:127
+  - 11.2 textoSelect(id)           → no existe; las lecturas de
+                                       actividadEconomica / ocupacionIngresosAd
+                                       están directas (sin blindaje) en
+                                       llenarCampos(): calculosnovacion.js:810 y :819
+
+16.7 Integración ITAU (sección 12):
+  - obligacionesitahu()                    → ITAHU/poblarObligacionesItau.js:3
+  - Llamada tras obligacionConsolidacion() → GENERAL/poblamientoOBL.js:29-30
+  - Botón .btnSimulador.itau               → GENERAL/botonesMecanismos.html:2
+
+16.8 Consolidación — campo Honorarios (sección 13):
+  obligacionConsolidacion() → CONSOLIDACION/funciones consolidacion.js:4
+  Resta de honorarios       → funciones consolidacion.js:52-53
+
+16.9 Pendientes (sección 15):
+  - abono is not defined → llamada en GENERAL/NAVEGACION.js:161
+  - obligacionCU()       → llamada en GENERAL/NAVEGACION.js:163
+  Ninguna de las dos tiene definición en este repo (viven en Lappiz).
+
+================================================================================
+FIN DEL DOCUMENTO
+================================================================================
