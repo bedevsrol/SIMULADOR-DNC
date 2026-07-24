@@ -312,7 +312,14 @@ function toggleHonorariosNov(on) {
     try { visibilityField('33e26099-22ea-4c29-8e5e-02346e3e366a', mostrarPilotos); } catch (e) {}    // PILOTOS
     try { visibilityField('435298fd-5cda-4327-9e83-079eda46f0a9', mostrarTasaGxC); } catch (e) {}    // Tasa GxC %
     try { visibilityField('3300e7e1-8d86-47d1-b709-2aa4773ec615', mostrarGastosGxC); } catch (e) {}  // Gastos GxC
+
+
+   // try {
+   // var listaCobro = document.getElementById('7f0df958-9e6d-48ba-95e3-0b3a8bc2e0fe');
+   //if (listaCobro) { listaCobro.disabled = (on !== 'NINGUNO'); }
+   //     } catch(e) {}
 }
+
 
 function initGastoNov() {
     var GID_GASTO = '7f0df958-9e6d-48ba-95e3-0b3a8bc2e0fe';

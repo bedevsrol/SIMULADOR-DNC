@@ -1,17 +1,25 @@
 function Obligacionvacia() {
 }
 async function Obligacion() {
-
     try {
-        let SpName = 'SimiladorDNC_Lappiz_EmailConfirmed';
-        let sw = '10';
+        debugger;
         let documentocliente = e.value;
         let fecha = new Date().toLocaleDateString()
-        let tipodoc = getFieldValue('15fb0de1-4989-4986-a662-61fb88b3aba1')
-        //let paramsArray = [sw, documentocliente, `'${fecha}'`];
-
-        let response = await execQuery(`EXEC SimiladorDNC_Lappiz_EmailConfirmed @sw = 10, @documentocliente= ${documentocliente}, @fecha = '${fecha}', @grupo = '${sessionStorage.Grupo}', @filtro = '${sessionStorage.Filtro}', @tipodoc = '${tipodoc}'`)
-        if (response[0][0]) {
+        let tipodocSeleccionado = getFieldValue('15fb0de1-4989-4986-a662-61fb88b3aba1')
+        // Lista de tipos de documento a intentar, empezando por el que este seleccionado en el dropdown
+        let tiposDocumento = ['CC', 'CE', 'NIT', 'PAS', 'TI'];
+        let tiposAProbar = [tipodocSeleccionado, ...tiposDocumento.filter(t => t !== tipodocSeleccionado)];
+        let response = null;
+        let tipodocEncontrado = tipodocSeleccionado;
+        for (const tipodocIntento of tiposAProbar) {
+            let intento = await execQuery(`EXEC SimiladorDNC_Lappiz_EmailConfirmed @sw = 10, @documentocliente= ${documentocliente}, @fecha = '${fecha}', @grupo = '${sessionStorage.Grupo}', @filtro = '${sessionStorage.Filtro}', @tipodoc = '${tipodocIntento}'`)
+            if (intento && intento[0] && intento[0][0]) {
+                response = intento;
+                tipodocEncontrado = tipodocIntento;
+                break;
+            }
+        }
+        if (response) {
             // bandera para los cuando se encuentre el cliente en la base de datos y habilitar tasas campaña
             sessionStorage.setItem('UserCargado', 'si');
             if (sessionStorage.getItem("EdadMoraCl") === "0 - Al día") {
@@ -19,6 +27,17 @@ async function Obligacion() {
             }
             console.log("console.log(backandGlobal.environment); " + backandGlobal.environment);
             sessionStorage.campanaAmpliacion = 'No';
+            // si el tipo de documento encontrado es distinto al seleccionado, actualiza el select para que quede coherente
+            if (tipodocEncontrado !== tipodocSeleccionado) {
+                setFieldValue('15fb0de1-4989-4986-a662-61fb88b3aba1', tipodocEncontrado);
+                let selectTipoDoc = document.getElementById('15fb0de1-4989-4986-a662-61fb88b3aba1');
+                let opcion = Array.from(selectTipoDoc.options).find(o => o.text.trim() === tipodocEncontrado);
+                if (opcion) {
+                    selectTipoDoc.value = opcion.value;
+                    selectTipoDoc.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+                console.log('Tipo de documento corregido automaticamente a: ' + tipodocEncontrado);
+            }
             kendo.jQuery("#caae86ca-b4e0-4e59-918e-8f7a1a4d4114").data('kendoDropDownList').dataSource.data(response[0])
             visibilityField('caae86ca-b4e0-4e59-918e-8f7a1a4d4114', true)
             obligacionConsolidacion(response[0])
@@ -26,7 +45,6 @@ async function Obligacion() {
             //campos nuevos de obl y cantidad
             visibilityField('0ab23e22-1c3c-4a43-8c58-207b83625867', false)
             visibilityField('c5f3bb92-1efe-47ea-941a-5bf2c5f6ceb0', false)
-
         } else {
             // Para saber si el usuario cargo desde la base de datos o no
             sessionStorage.setItem('UserCargado', 'no');
@@ -46,7 +64,6 @@ async function Obligacion() {
             visibilityField('0ab23e22-1c3c-4a43-8c58-207b83625867', true)
             visibilityField('c5f3bb92-1efe-47ea-941a-5bf2c5f6ceb0', true)
         }
-
     } catch (error) {
         sessionStorage.setItem('UserCargado', 'no');
         Swal.fire({
@@ -78,5 +95,4 @@ async function Obligacion() {
     } catch (error) {
         console.log(error);
     }
-
 }
