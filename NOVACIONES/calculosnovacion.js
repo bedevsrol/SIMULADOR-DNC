@@ -18,7 +18,8 @@ function calculoNovacion() {
         cuotaEstimada:        'd157fb29-fd6f-450b-b637-8fa18c824cd2',
         saldoFinalDiferir:    'c6923383-8eec-4efe-81a5-954ce52b8882',
         pagoParaNegociacion:  '92bcba6d-4dab-459e-bd8f-164da7eeb526',
-        honorarios:           '075c9be0-baad-48b2-864d-acae840b7256'
+        honorarios:           '075c9be0-baad-48b2-864d-acae840b7256',
+        honorariosMax:        '1b7acda2-ec9a-4c72-937b-57fc95e4a4d1'
     };
  
     function num(v)    { return isNaN(parseFloat(v)) ? 0 : parseFloat(v); }
@@ -115,6 +116,7 @@ function calculoNovacion() {
         }
  
         setFieldValue(NOV.abonoMinimo,         abonoMinimo);
+        setFieldValue(NOV.honorariosMax,          honorarios);
         setFieldValue(NOV.honorarios,          honorarios);
         setFieldValue('33e26099-22ea-4c29-8e5e-02346e3e366a', (esHonorarios === 'PILOTOS') ? honorarios : 0);
         setFieldValue(NOV.tasaGxC,             tasaGxC);
@@ -123,7 +125,6 @@ function calculoNovacion() {
         setFieldValue(NOV.factMes2a6,          factMes2a6);
         setFieldValue(NOV.cuotaEstimada,       cuotaEstimada);
         setFieldValue(NOV.saldoFinalDiferir,   saldoFinal);
-        
         setFieldValue(NOV.pagoParaNegociacion, Math.round(pagoNegociacion));
  
         try {
@@ -138,7 +139,6 @@ function calculoNovacion() {
         window.NOV_calculando = false;
     }
 }
-
 //consulta rango de dias novaciones
 function consultarRango() {
     var ID_DIAS = '0cb35f96-ddc9-40e7-b948-8f0d4d86bf79';
@@ -308,16 +308,15 @@ function toggleHonorariosNov(on) {
     // Gastos GxC (valor): visible solo en GASTOS
     var mostrarGastosGxC = (on === false || on === 'GASTOS');
  
+    try { visibilityField('1b7acda2-ec9a-4c72-937b-57fc95e4a4d1', mostrarHon); } catch (e) {}       // Honorarios Máximos
     try { visibilityField('075c9be0-baad-48b2-864d-acae840b7256', mostrarHon); } catch (e) {}       // Honorarios
     try { visibilityField('33e26099-22ea-4c29-8e5e-02346e3e366a', mostrarPilotos); } catch (e) {}    // PILOTOS
     try { visibilityField('435298fd-5cda-4327-9e83-079eda46f0a9', mostrarTasaGxC); } catch (e) {}    // Tasa GxC %
     try { visibilityField('3300e7e1-8d86-47d1-b709-2aa4773ec615', mostrarGastosGxC); } catch (e) {}  // Gastos GxC
-
-
-   // try {
-   // var listaCobro = document.getElementById('7f0df958-9e6d-48ba-95e3-0b3a8bc2e0fe');
-   //if (listaCobro) { listaCobro.disabled = (on !== 'NINGUNO'); }
-   //     } catch(e) {}
+    //try {
+    //var listaCobro = document.getElementById('7f0df958-9e6d-48ba-95e3-0b3a8bc2e0fe');
+    //if (listaCobro) { listaCobro.disabled = (on !== 'NINGUNO'); }
+    //   } catch(e) {}
 }
 
 
@@ -358,10 +357,24 @@ function initGastoNov() {
     if (typeof calculoNovacion === 'function') { calculoNovacion(); }
 }
 
-//
+// 
 
-
-
+function validacion() {
+    var pagoParaNegociacion = parseFloat(getFieldValue('92bcba6d-4dab-459e-bd8f-164da7eeb526')) || 0;
+    var pagoMinimoRequerido=  parseFloat(getFieldValue('4cbf2d64-0442-4c98-964f-e741a6a4e6a1')) || 0;
+    if (pagoParaNegociacion < pagoMinimoRequerido) {
+        toastr.warning("El pago para la negociación debe de ser mayor al pago mínimo requerido");
+    }
+}
+function validaHono(){
+    var maxPermitido  = parseFloat(getFieldValue('1b7acda2-ec9a-4c72-937b-57fc95e4a4d1'));
+    var honorariosMax = parseFloat(getFieldValue('1b7acda2-ec9a-4c72-937b-57fc95e4a4d1')) || 0;
+    var honorarios    = parseFloat(getFieldValue('075c9be0-baad-48b2-864d-acae840b7256')) || 0;
+    if (honorarios > honorariosMax) {
+        setFieldValue('075c9be0-baad-48b2-864d-acae840b7256', maxPermitido);
+        toastr.warning("Los honorarios no pueden exceder el monto máximo permitido");
+    }
+}
 
 
 
