@@ -1,0 +1,116 @@
+<div class="contenedor">
+    <div class="grupoItau">
+        <button class="btnSimulador itau">itaú</button>
+        <button class="flechaBtn" id="btnFlecha" aria-label="Expandir menú">›</button>
+    </div>
+    <button class="btnSimulador consolidacion oculto">Consolidación de Productos</button>
+    <button class="btnSimulador novaciones oculto">Novaciones</button>
+    <button class="btnSimulador pagomora oculto">Pago Mora</button>
+    <button class="btnSimulador cancelacion oculto">Cancelación Total</button>
+    <button class="btnSimulador ampliacion oculto">Ampliación</button>
+</div>
+
+<style>
+    .contenedor {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin: 20px 0;
+    }
+
+    .grupoItau {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .btnSimulador {
+        border: none;
+        border-radius: 15px;
+        height: 50px;
+        color: white;
+        background-color: #0041a4;
+        font-weight: bold;
+        flex: 0 1 200px;
+        max-width: 200px;
+        width: 200px;
+        text-align: center;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: background-color 0.2s, box-shadow 0.2s, transform 0.3s, opacity 0.3s;
+    }
+
+    .btnSimulador:hover {
+        background-color: #00317e;
+        box-shadow: 0 0 10px #00317e;
+    }
+
+    .flechaBtn {
+        background: none;
+        border: none;
+        color: #0041a4;
+        font-size: 38px;
+        font-weight: bold;
+        line-height: 1;
+        cursor: pointer;
+        padding: 0 6px;
+        transition: transform 0.6s, color 0.2s;
+    }
+
+    .flechaBtn:hover {
+        color: #00317e;
+    }
+
+    .contenedor.expandido .flechaBtn {
+        transform: rotate(90deg);
+    }
+
+    .btnSimulador.oculto {
+        display: none;
+    }
+
+    .contenedor.expandido .btnSimulador.oculto {
+        display: inline-flex;
+        animation: aparecer 0.6s ease forwards;
+    }
+
+    .contenedor.expandido .btnSimulador.consolidacion { animation-delay: 0s; }
+    .contenedor.expandido .btnSimulador.novaciones { animation-delay: 0.08s; }
+    .contenedor.expandido .btnSimulador.pagomora { animation-delay: 0.16s; }
+    .contenedor.expandido .btnSimulador.cancelacion { animation-delay: 0.24s; }
+    .contenedor.expandido .btnSimulador.ampliacion { animation-delay: 0.32s; }
+
+    @keyframes aparecer {
+        from {
+            opacity: 0;
+            transform: translateX(-25px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    @media (max-width: 768px) {
+        .btnSimulador {
+            flex: 1 1 100%;
+            max-width: 100%;
+            width: 100%;
+        }
+    }
+</style>
+
+<script>
+    (function() {
+        const btnFlecha = document.getElementById('btnFlecha');
+        const contenedor = btnFlecha.closest('.contenedor');
+
+        btnFlecha.addEventListener('click', function() {
+            contenedor.classList.toggle('expandido');
+        });
+    })();
+</script>

@@ -1,0 +1,132 @@
+Levantamiento de información para formato de excepciones
+
+Crear entidad Formato Excepción
+Relacionarla con simulador DNC
+
+
+Tipos de excepción identificados
+Las excepciones disponibles actualmente son:
+•	Pago mínimo inferior
+	
+•	Capacidad de pago inferior a nueva cuota
+•	Tiempo entre mecanismos
+•	Aplicar mecanismo anticipadamente
+•	Baja de saldo superior a política
+•	Negociación sin pago
+•	Producto no cabeza de mora
+•	Extensión de plazo. 
+
+*PAGO MINIMO INFERIOR:Seleccione SI cuando la excepción es porque el pago requerido es menor al solicitado por la política
+
+*CAPACIDAD DE PAGO INFERIOR A LA NUEVA CUOTA: Seleccione SI cuando la excepción corresponde a que el valor de la capacidad del cliente es menor a la cuota proyectada
+
+*TIEMPO ENTRE MECANISMOS MENOR: Seleccione SI cuando la excepción corresponde a un valor menor del tiempo desde la última aplicación de una negociación de acuerdo a la política
+
+*EDAD MORA PARA APLICAR MECANISMO:Seleccione SI cuando la excepción corresponde a una edad de mora que no está contemplada en la política.
+
+*% BAJA DE SALDOS SUPERIORES A LA POLÍTICA: "Seleccione SI cuando la excepción corresponde a un % mayor de baja en saldo de acuerdo a lo definido en la política
+NOTA se incluye para ""CANCELACIÓN TOTAL"""
+
+*SIN PAGO: Seleccione SI cuando la excepción corresponde a la no solicitud de abono de la negociación
+
+*EL PRODUCTO NO ES LA CABEZA DE MORA:Seleccione SI cuando la excepción corresponde a una negociación de un producto diferente a la cabeza de mora
+
+*EXTENCIONES DE PLAZO:Seleccione SI cuando la excepción corresponde a un plazo mayor al permitido por la política
+
+5. Regla de aprobación por porcentaje adicional
+El flujo utiliza un campo denominado "Porcentaje adicional a política" que determina el nivel de aprobación:
+•	0% o 1% → Paola Martinez
+•	Hasta 3% → Carlos Osorio
+•	Mayor al 3% → Alejandro Figueroa
+Dependiendo del valor seleccionado, la excepción es asignada automáticamente al aprobador correspondiente.  
+
+Paso 6
+El sistema genera automáticamente:
+•	Archivo Excel con la estructura corporativa vigente.
+•	Campos calculados.
+•	Totales y valores condonados.
+•	Información consolidada para aprobación. 
+
+Reglas de negocio
+RN01: Solo debe permitirse generar excepciones cuando el campo Excepción = Sí.
+RN02: Debe permitirse seleccionar múltiples excepciones para una misma solicitud.
+RN03: Los porcentajes de condonación serán ingresados manualmente por el usuario.
+RN04: Los valores monetarios derivados deben calcularse automáticamente.
+RN05: El sistema debe permitir generar el formato aun cuando algunos datos no estén disponibles, habilitándolos para diligenciamiento manual.
+RN06: El archivo generado debe ser compatible con el proceso actual de flujo de excepciones.
+
+
+//que mecanismos tienen el kendo de Requiere Tramite Excepción *
+
+Consolidación  48dfc177-18ab-4c7c-91a9-e2a63c92dc15
+pago mora      d3b8782c-c94a-4b7a-a2aa-00baba7bfbd5
+cancelación    e99362f1-b8da-4cca-8982-c8af8dcb5caf
+ampliación     13719b60-17be-4c9f-a190-d6fe27ab12f6
+Novacion       9f53f77e-2ed6-48f2-a6f9-87552428a4db
+
+
+CAMPOS DEL MNC FOR 077
+
+MECANISMO
+TIPO_ID
+NUMERO_ID
+FECHA DE NEGOCIACIÓN
+ÁREA DE GESTIÓN
+AGENCIA
+NUMERO_OBLIGACIÓN
+TIPO_OBLIGACIÓN
+ESTADO_OBLIGACIÓN
+TIPO_PRODUCTO
+FECHA_CASTIGO
+EDAD_MORA
+PLAZO
+COBERTURA
+CAPITAL_VENCIDO
+CAPITAL_TOTAL
+INTERÉS_CORRIENTE
+INTERÉS_MORA
+INTERESES_EXTRACONTABLES
+OTROS_CARGOS
+SALDO_TOTAL
+FECHA_DESEMBOLSO
+VALOR_INICIAL_CUPO
+TASA_INTERÉS_E.A
+GARANTÍA
+SNR
+CUENTA
+FECHA_PROMESA_DE_PAGO
+VALOR_PAGO
+FECHA_PAGO
+% ADICIONAL CON BAJA CUENTA
+% ADICIONAL A POLITICA
+VALOR_PROPUESTA
+% CASTIGO_PARCIAL_BAJA_CUENTA_CAPITAL
+VALOR CASTIGO_PARCIAL_BAJA_CUENTA_CAPITAL
+% CASTIGO_PARCIAL_BAJA_CUENTA_INTERES_CORRIENTES
+VALOR CASTIGO_PARCIAL_BAJA_CUENTA_INTERES_CORRIENTES
+% CASTIGO_PARCIAL_BAJA_CUENTA_INTERESES_MORA
+VALOR CASTIGO_PARCIAL_BAJA_CUENTA_INTERESES_MORA
+% CASTIGO_PARCIAL_BAJA_CUENTA_INTERESES_EXTRACONTRABLES
+VALOR CASTIGO_PARCIAL_BAJA_CUENTA_INTERESES_EXTRACONTABLES
+% HONORARIOS
+VALOR_HONORARIOS
+VALOR_TOTAL_CASTIGOS_PARCIAL_BAJA_CUENTA
+FECHA INICIO DE PROCESO
+ETAPA DE PROCESO
+ESTADO_RECLAMACIÓN_FNG_FAG
+FECHA ETAPA PROCESAL
+MEDIDAS CAUTELARES
+PROVISIÓN
+MARCA C026
+CALIFICACIÓN
+CAUSA DE LA MORA
+DETALLE DE LA PROPUESTA
+PLAZO ACUERDO DE PAGO
+PAGO MINIMO INFERIOR
+CAPACIDAD DE PAGO INFERIOR A LA NUEVA CUOTA
+TIEMPO ENTRE MECANISMOS MENOR
+EDAD MORA PARA APLICAR MECANISMO
+% BAJA DE SALDOS SUPERIORES A LA POLÍTICA
+SIN PAGO
+EL PRODUCTO NO ES LA CABEZA DE MORA
+EXTENSIONES DE PLAZO

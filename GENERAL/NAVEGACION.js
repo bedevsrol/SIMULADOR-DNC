@@ -25,7 +25,7 @@ const VISTAS = {
     CANCELACION_P2: 6,
     CANCELACION_P3: 12,
 
-    CONSOLIDACION_P1: 14,
+    CONSOLIDACION_P1: 15,
     CONSOLIDACION_P2: 9,
     CONSOLIDACION_P4: 8,
 
@@ -350,5 +350,3 @@ function inicializarNavegacion() {
 setTimeout(() => {
     inicializarNavegacion()
 }, 7000) 
-
-
