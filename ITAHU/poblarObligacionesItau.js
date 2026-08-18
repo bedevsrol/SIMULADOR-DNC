@@ -1,8 +1,15 @@
+function toggleOtrosMecanismosItau(bloquear) {
+    document.querySelectorAll('.btnSimulador:not(.itau)').forEach(btn => {
+        btn.style.display = bloquear ? 'none' : '';
+    });
+}
+
 function obligacionesitauvacia(data) {
     const consolidacionDiv = document.getElementById("consolidacionitahu");
     const btnItau = document.querySelector('.btnSimulador.itau');
     if (consolidacionDiv) { consolidacionDiv.innerHTML = ""; }
     if (btnItau) { btnItau.style.display = 'none'; }
+    toggleOtrosMecanismosItau(false);
 }
 
 async function obligacionesitau(data) {
@@ -14,6 +21,7 @@ async function obligacionesitau(data) {
 
     if (!data || data.length === 0) {
         if (btnItau) { btnItau.style.display = 'none'; }
+        toggleOtrosMecanismosItau(false);
         return;
     }
 
@@ -24,11 +32,13 @@ async function obligacionesitau(data) {
     if (dataItau.length === 0) {
         console.log("ITAU: no se encontraron obligaciones");
         if (btnItau) { btnItau.style.display = 'none'; }
+        toggleOtrosMecanismosItau(false);
         return;
     }
 
-    // --- AQUI SE ACTIVA EL BOTON ---
+    // --- AQUI SE ACTIVA EL BOTON ITAU Y SE ESCONDEN LOS DEMAS ---
     if (btnItau) { btnItau.style.display = 'inline-block'; }
+    toggleOtrosMecanismosItau(true);
 
     dataItau = dataItau.sort((a, b) => {
         const diasA = parseFloat(a.DiasMoraObl) || 0;
@@ -38,7 +48,9 @@ async function obligacionesitau(data) {
 
     setFieldValue('ee828c1e-273d-4f48-80bd-270064a1593c', dataItau[0].NombreCompleto || "");
     setFieldValue('0a77d0fe-8905-4eb4-802b-ba7387e418e7', dataItau[0].Identificacion || "");
+    setFieldValue('0eeacfd7-2ac4-408f-baa7-a560adc18f7e', dataItau[0].TipoDoc || "");
     setFieldValue('09dc2f41-1420-4a56-ac13-67b205362d4d', dataItau[0].CapitalTotalCl || "");
+
 
     // --- Resolver nombres de linea (evitando consultar el mismo codigo repetidas veces) ---
     const codigosLinea = [...new Set(dataItau.map(item => item.CustomChar2).filter(Boolean))];
@@ -115,6 +127,9 @@ async function obligacionesitau(data) {
         card1itahu.appendChild(fieldsGrid);
         consolidacionDiv.appendChild(card1itahu);
     });
+
+    // --- SE DISPARA EL CLICK DEL BOTON ITAU, REUTILIZANDO EL HANDLER YA DEFINIDO EN inicializarNavegacion ---
+    if (btnItau) { btnItau.click(); }
 }
 
 function formatMoney(value) {
