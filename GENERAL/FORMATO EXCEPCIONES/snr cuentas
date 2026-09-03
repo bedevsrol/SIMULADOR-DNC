@@ -1,0 +1,71 @@
+//Insercion a la base del numero de cuentas
+
+//PARAMETRO
+Flujo           000783274
+Media           000803015
+Juridico        000778175
+Pos Juridico    000778183
+Extra Juridico  000778167
+Titulos         000778167
+Sin Pago        0
+Cuenta Contable Ver SAP
+
+//INSERT 
+INSERT INTO SimiladorDNC_Lappiz_CUENTASNR (Id, Concepto, CuentaContable)
+VALUES
+(NEWID(), 'Flujo', '000783274'),
+(NEWID(), 'Media', '000803015'),
+(NEWID(), 'Juridico', '000778175'),
+(NEWID(), 'Pos Juridico', '000778183'),
+(NEWID(), 'Extra Juridico', '000778167'),
+(NEWID(), 'Titulos', '000778167'),
+(NEWID(), 'Sin Pago', '0'),
+(NEWID(), 'Cuenta Contable', 'Ver SAP');
+
+function validarExcedentePoliticaVacio() {
+}
+
+function validarExcedentePolitica() {
+    const idsAbonoMinimoMax = {
+        pagomora: '8f7266d7-dfc0-4ff4-afad-c50fbfa67062',
+        cancelacion: '0864b793-256f-41f6-ab7c-5b5c18c1f51f',
+        ampliacion: '9b88d521-a3dd-4948-8c3f-6dece97a17a5'
+    };
+    const idsPagoSNR = {
+        pagomora: '3539dba8-0c22-491e-a05b-84642d675d59',
+        cancelacion: 'b5c33a6d-9d65-4920-8a39-e73621b7daa9',
+        ampliacion: '44770cdb-4d75-4b2a-957f-400410e65e8d'
+    };
+    const idsListaTramiteExcepcion = {
+        consolidacion: '48dfc177-18ab-4c7c-91a9-e2a63c92dc15',
+        novacion: '9f53f77e-2ed6-48f2-a6f9-87552428a4db',
+        pagomora: 'd3b8782c-c94a-4b7a-a2aa-00baba7bfbd5',
+        cancelacion: 'e99362f1-b8da-4cca-8982-c8af8dcb5caf',
+        ampliacion: '13719b60-17be-4c9f-a190-d6fe27ab12f6'
+    };
+
+    const mecanismo = sessionStorage.mecanismo || '';
+    const idAbonoMinimoMax = idsAbonoMinimoMax[mecanismo];
+    const idPagoSNR = idsPagoSNR[mecanismo];
+    const idListaTramite = idsListaTramiteExcepcion[mecanismo];
+
+    // este mecanismo no tiene ambos campos (Consolidacion y Novacion no aplican)
+    if (!idAbonoMinimoMax || !idPagoSNR || !idListaTramite) { return; }
+
+    const abonoMinimoMax = parseFloat(getFieldValue(idAbonoMinimoMax)) || 0;
+    const pagoSNR = parseFloat(getFieldValue(idPagoSNR)) || 0;
+
+    // si la propuesta (pago al SNR) es menor al abono minimo max permitido por politica, se activa el tramite de excepcion
+    if (pagoSNR < abonoMinimoMax) {
+        const el = document.getElementById(idListaTramite);
+        if (el && el.tagName === 'SELECT') {
+            const opcion = Array.from(el.options).find(o => o.text.trim().toUpperCase() === 'SI');
+            if (opcion) {
+                el.value = opcion.value;
+                el.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        } else {
+            setFieldValue(idListaTramite, 'Si');
+        }
+    }
+}
